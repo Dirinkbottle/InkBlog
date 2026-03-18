@@ -1,0 +1,43 @@
+/* 移动端Markdown优化 */
+@media (max-width: 768px) {
+  .markdown-body {
+    font-size: 16px !important;
+    word-wrap: break-word;
+  }
+  
+  .markdown-body pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100vw;
+  }
+  
+  .markdown-body code {
+    word-break: break-all;
+    font-size: 14px;
+  }
+  
+  .markdown-body table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+  
+  .markdown-body img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  .markdown-body h1 {
+    font-size: 1.75rem;
+  }
+  
+  .markdown-body h2 {
+    font-size: 1.5rem;
+  }
+  
+  .markdown-body h3 {
+    font-size: 1.25rem;
+  }
+}
+

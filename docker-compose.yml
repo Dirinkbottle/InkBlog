@@ -1,0 +1,130 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-mysql
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ./deploy/mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./deploy/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-backend
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      NOTIFICATION_SERVICE_URL: http://notification:13160
+      NOTIFICATION_SERVICE_TOKEN: ${NOTIFICATION_SERVICE_TOKEN}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /app/runtime /app/uploads /app/logs
+        ln -sf /app/runtime/config.json /app/config.json
+        ln -sf /app/runtime/install.lock /app/install.lock
+        exec ./main
+    volumes:
+      - ./deploy/runtime:/app/runtime
+      - ./deploy/uploads:/app/uploads
+      - ./deploy/logs:/app/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:13150/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  notification:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-notification
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      NOTIFICATION_PORT: 13160
+      NOTIFICATION_SERVICE_URL: http://notification:13160
+      NOTIFICATION_SERVICE_TOKEN: ${NOTIFICATION_SERVICE_TOKEN}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /app/runtime /app/logs
+        ln -sf /app/runtime/config.json /app/config.json
+        ln -sf /app/runtime/install.lock /app/install.lock
+        until [ -f /app/runtime/install.lock ] && [ -f /app/runtime/config.json ]; do
+          echo "[notification] waiting for install.lock and config.json"
+          sleep 5
+        done
+        exec ./notification
+    volumes:
+      - ./deploy/runtime:/app/runtime
+      - ./deploy/logs:/app/logs
+    depends_on:
+      backend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:13160/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend/blog
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      notification:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped

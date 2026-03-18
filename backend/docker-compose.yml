@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: inkblog_postgres
+    environment:
+      POSTGRES_DB: inkblog
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - inkblog_network
+    restart: unless-stopped
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: inkblog_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - inkblog_network
+    restart: unless-stopped
+
+  # 后端服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inkblog_backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: inkblog
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NOTIFICATION_SERVICE_URL: http://notification:13160
+      NOTIFICATION_SERVICE_TOKEN: inkblog-notification-dev-token
+    ports:
+      - "13150:13150"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./config.yaml:/app/config.yaml
+      - ./config.json:/app/config.json
+      - ./install.lock:/app/install.lock
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - inkblog_network
+    restart: unless-stopped
+
+  notification:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inkblog_notification
+    command: ["./notification"]
+    environment:
+      NOTIFICATION_PORT: 13160
+      NOTIFICATION_SERVICE_URL: http://notification:13160
+      NOTIFICATION_SERVICE_TOKEN: inkblog-notification-dev-token
+    ports:
+      - "13160:13160"
+    volumes:
+      - ./config.json:/app/config.json
+      - ./install.lock:/app/install.lock
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - inkblog_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  inkblog_network:
+    driver: bridge
+
