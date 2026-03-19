@@ -23,10 +23,10 @@ type User struct {
 	Status      string         `gorm:"not null;default:'active';size:20" json:"status"`
 	Permissions UserPermissions `gorm:"type:json" json:"permissions"`
 	// 邮箱验证字段
-	IsEmailVerified         bool      `gorm:"default:false" json:"is_email_verified"`
-	EmailVerificationToken  string    `gorm:"size:255" json:"-"`
-	EmailVerificationSentAt time.Time `json:"-"`
-	Posts                   []Post    `gorm:"foreignKey:AuthorID" json:"posts,omitempty"`
+	IsEmailVerified         bool       `gorm:"default:false" json:"is_email_verified"`
+	EmailVerificationToken  string     `gorm:"size:255" json:"-"`
+	EmailVerificationSentAt *time.Time `json:"-"`
+	Posts                   []Post     `gorm:"foreignKey:AuthorID" json:"posts,omitempty"`
 }
 
 // UserPermissions 用户权限结构

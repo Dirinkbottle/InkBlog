@@ -34,6 +34,7 @@ ENV TZ=Asia/Shanghai
 COPY --from=builder /app/main .
 COPY --from=builder /app/notification .
 COPY --from=builder /app/config.yaml .
+COPY --from=builder /app/scripts ./scripts
 
 # 创建运行目录
 RUN mkdir -p /app/uploads /app/logs /app/runtime

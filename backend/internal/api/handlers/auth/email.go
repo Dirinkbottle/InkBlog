@@ -40,7 +40,7 @@ func VerifyEmail(c *gin.Context) {
 		expiryHours = hours
 	}
 
-	if time.Since(user.EmailVerificationSentAt) > time.Duration(expiryHours)*time.Hour {
+	if user.EmailVerificationSentAt == nil || time.Since(*user.EmailVerificationSentAt) > time.Duration(expiryHours)*time.Hour {
 		utils.BadRequest(c, "验证链接已过期，请重新发送验证邮件")
 		return
 	}
@@ -48,7 +48,7 @@ func VerifyEmail(c *gin.Context) {
 	// 更新用户状态
 	user.IsEmailVerified = true
 	user.EmailVerificationToken = ""
-	user.EmailVerificationSentAt = time.Time{} // 清空发送时间
+	user.EmailVerificationSentAt = nil
 
 	if err := db.Save(&user).Error; err != nil {
 		utils.InternalServerError(c, "验证失败")
@@ -95,7 +95,8 @@ func ResendVerificationEmail(c *gin.Context) {
 	}
 
 	user.EmailVerificationToken = token
-	user.EmailVerificationSentAt = time.Now()
+	now := time.Now()
+	user.EmailVerificationSentAt = &now
 
 	if err := db.Save(&user).Error; err != nil {
 		utils.InternalServerError(c, "更新用户信息失败")

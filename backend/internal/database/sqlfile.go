@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gorm.io/gorm"
@@ -11,7 +12,12 @@ import (
 
 // ExecSQLFile 读取并执行 SQL 文件（按分号分割语句逐条执行）
 func ExecSQLFile(db *gorm.DB, filePath string) error {
-	content, err := os.ReadFile(filePath)
+	resolvedPath, err := resolveSQLFilePath(filePath)
+	if err != nil {
+		return err
+	}
+
+	content, err := os.ReadFile(resolvedPath)
 	if err != nil {
 		return fmt.Errorf("读取 SQL 文件失败: %w", err)
 	}
@@ -27,8 +33,40 @@ func ExecSQLFile(db *gorm.DB, filePath string) error {
 		}
 	}
 
-	utils.Info("SQL 文件执行完成: %s (%d 条语句)", filePath, len(statements))
+	utils.Info("SQL 文件执行完成: %s (%d 条语句)", resolvedPath, len(statements))
 	return nil
+}
+
+func resolveSQLFilePath(filePath string) (string, error) {
+	candidates := []string{
+		filePath,
+		filepath.Join("backend", filePath),
+		filepath.Join("/app", filePath),
+		filepath.Join("/app", "backend", filePath),
+	}
+
+	if executablePath, err := os.Executable(); err == nil {
+		execDir := filepath.Dir(executablePath)
+		candidates = append(candidates,
+			filepath.Join(execDir, filePath),
+			filepath.Join(execDir, "backend", filePath),
+		)
+	}
+
+	seen := make(map[string]struct{}, len(candidates))
+	for _, candidate := range candidates {
+		cleaned := filepath.Clean(candidate)
+		if _, exists := seen[cleaned]; exists {
+			continue
+		}
+		seen[cleaned] = struct{}{}
+
+		if _, err := os.Stat(cleaned); err == nil {
+			return cleaned, nil
+		}
+	}
+
+	return "", fmt.Errorf("读取 SQL 文件失败: 未找到 %s", filePath)
 }
 
 // splitStatements 按分号分割 SQL，忽略注释和空行

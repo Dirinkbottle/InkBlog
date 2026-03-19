@@ -22,7 +22,7 @@ func CleanupUnverifiedUsers() {
 	cutoffTime := time.Now().Add(-time.Duration(expiryHours) * time.Hour)
 
 	var users []model.User
-	if err := db.Where("is_email_verified = ? AND email_verification_sent_at < ? AND email_verification_sent_at != ?", false, cutoffTime, time.Time{}).Find(&users).Error; err != nil {
+	if err := db.Where("is_email_verified = ? AND email_verification_sent_at IS NOT NULL AND email_verification_sent_at < ?", false, cutoffTime).Find(&users).Error; err != nil {
 		utils.Error("Failed to query unverified users: %v", err)
 		return
 	}

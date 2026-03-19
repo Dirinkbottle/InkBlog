@@ -35,7 +35,8 @@ func Register(req RegisterRequest) (*model.User, error) {
 
 			emailUser.Password = hashedPassword
 			emailUser.EmailVerificationToken = token
-			emailUser.EmailVerificationSentAt = time.Now()
+			now := time.Now()
+			emailUser.EmailVerificationSentAt = &now
 
 			if err := db.Save(&emailUser).Error; err != nil {
 				return nil, errors.New("更新用户信息失败")
@@ -58,14 +59,15 @@ func Register(req RegisterRequest) (*model.User, error) {
 	}
 
 	verificationToken := ""
-	var verificationSentAt time.Time
+	var verificationSentAt *time.Time
 	if emailVerificationEnabled {
 		token, err := utils.GenerateVerificationToken()
 		if err != nil {
 			return nil, errors.New("生成验证令牌失败")
 		}
 		verificationToken = token
-		verificationSentAt = time.Now()
+		now := time.Now()
+		verificationSentAt = &now
 	}
 
 	user := model.User{
