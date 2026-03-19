@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"inkblog-backend/internal/database"
 	"inkblog-backend/internal/model"
+	"inkblog-backend/internal/notification"
 	"inkblog-backend/pkg/utils"
 )
 
@@ -33,6 +34,7 @@ func UpdateProfile(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		notification.QueueWarning(c, "资料更新参数错误")
 		utils.BadRequest(c, "请求参数错误: "+err.Error())
 		return
 	}
@@ -40,6 +42,7 @@ func UpdateProfile(c *gin.Context) {
 	db := database.GetDB()
 	var user model.User
 	if err := db.First(&user, userID).Error; err != nil {
+		notification.QueueWarning(c, "用户不存在")
 		utils.NotFound(c, "用户不存在")
 		return
 	}
@@ -55,6 +58,7 @@ func UpdateProfile(c *gin.Context) {
 	}
 
 	utils.Info("User profile updated: %s", user.Username)
+	notification.QueueSuccess(c, "个人信息更新成功")
 	utils.Success(c, user.ToResponseWithAvatar())
 }
 
@@ -68,6 +72,7 @@ func ChangePassword(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		notification.QueueWarning(c, "修改密码参数错误")
 		utils.BadRequest(c, "请求参数错误: "+err.Error())
 		return
 	}
@@ -75,12 +80,14 @@ func ChangePassword(c *gin.Context) {
 	db := database.GetDB()
 	var user model.User
 	if err := db.First(&user, userID).Error; err != nil {
+		notification.QueueWarning(c, "用户不存在")
 		utils.NotFound(c, "用户不存在")
 		return
 	}
 
 	// 验证旧密码
 	if !utils.CheckPassword(user.Password, req.OldPassword) {
+		notification.QueueWarning(c, "旧密码错误")
 		utils.BadRequest(c, "旧密码错误")
 		return
 	}
@@ -100,5 +107,6 @@ func ChangePassword(c *gin.Context) {
 	}
 
 	utils.Info("User password changed: %s", user.Username)
+	notification.QueueSuccess(c, "密码修改成功")
 	utils.Success(c, gin.H{"message": "密码修改成功"})
 }

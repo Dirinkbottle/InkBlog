@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import useAuthStore from '@/store/authStore'
 import api from '@/services/api'
 import { toast } from 'sonner'
+import { getApiErrorMessage, shouldShowLocalApiError } from '@/utils/apiErrors'
 
 export default function ProfileTab() {
   const { user, updateUser } = useAuthStore()
@@ -59,9 +60,10 @@ export default function ProfileTab() {
         avatar_base64: avatarBase64,
       })
       updateUser(response.data)
-      toast.success('个人信息更新成功！')
     } catch (error) {
-      toast.error('更新失败: ' + (error.response?.data?.message || error.message))
+      if (shouldShowLocalApiError(error)) {
+        toast.error(getApiErrorMessage(error, '更新失败，请稍后重试'))
+      }
     } finally {
       setUpdating(false)
     }
@@ -84,12 +86,13 @@ export default function ProfileTab() {
         old_password: oldPassword,
         new_password: newPassword,
       })
-      toast.success('密码修改成功！')
       setOldPassword('')
       setNewPassword('')
       setConfirmPassword('')
     } catch (error) {
-      toast.error('修改失败: ' + (error.response?.data?.message || error.message))
+      if (shouldShowLocalApiError(error)) {
+        toast.error(getApiErrorMessage(error, '修改失败，请稍后重试'))
+      }
     } finally {
       setChangingPassword(false)
     }

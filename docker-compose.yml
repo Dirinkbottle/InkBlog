@@ -82,6 +82,7 @@ services:
       NOTIFICATION_PORT: 13160
       NOTIFICATION_SERVICE_URL: http://notification:13160
       NOTIFICATION_SERVICE_TOKEN: ${NOTIFICATION_SERVICE_TOKEN}
+      SERVICE_CONTROL_TOKEN: ${SERVICE_CONTROL_TOKEN}
     command:
       - /bin/sh
       - -c
@@ -108,6 +109,43 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  core-control:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-core-control
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      CORE_CONTROL_PORT: ${CORE_CONTROL_PORT:-13170}
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-inkblog}
+      SERVICE_CONTROL_TOKEN: ${SERVICE_CONTROL_TOKEN}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /app/runtime /app/logs
+        ln -sf /app/runtime/config.json /app/config.json
+        ln -sf /app/runtime/install.lock /app/install.lock
+        until [ -f /app/runtime/install.lock ] && [ -f /app/runtime/config.json ]; do
+          echo "[core-control] waiting for install.lock and config.json"
+          sleep 5
+        done
+        exec ./core-control
+    volumes:
+      - ./deploy/runtime:/app/runtime
+      - ./deploy/logs:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      backend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "[ ! -f /app/runtime/install.lock ] || [ ! -f /app/runtime/config.json ] || wget -qO- http://127.0.0.1:${CORE_CONTROL_PORT:-13170}/health >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
   web:
     build:
       context: ./frontend/blog
@@ -121,6 +159,8 @@ services:
       backend:
         condition: service_healthy
       notification:
+        condition: service_started
+      core-control:
         condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null 2>&1 || exit 1"]

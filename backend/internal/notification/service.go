@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -156,6 +157,112 @@ func (s *Service) PendingDeliveries(identity StreamIdentity) ([]EventPayload, er
 	}
 
 	return result, nil
+}
+
+func (s *Service) PanelSummary() (PanelSummary, error) {
+	rows, err := s.deliveryStatusCounts()
+	if err != nil {
+		return PanelSummary{}, err
+	}
+
+	summary := PanelSummary{
+		OnlineSessions: len(s.registry.Connections()),
+	}
+	for status, count := range rows {
+		switch status {
+		case StatusPending:
+			summary.PendingCount = count
+		case StatusDelivered:
+			summary.DeliveredCount = count
+		case StatusAcknowledged:
+			summary.AcknowledgedCount = count
+		case StatusExpired:
+			summary.ExpiredCount = count
+		}
+	}
+
+	return summary, nil
+}
+
+func (s *Service) OnlineSessions() []OnlineSession {
+	return s.registry.Connections()
+}
+
+func (s *Service) ListDeliveries(filter DeliveryFilter) (DeliveryListResult, error) {
+	page := filter.Page
+	if page <= 0 {
+		page = 1
+	}
+
+	pageSize := filter.PageSize
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	query := s.db.Model(&model.NotificationDelivery{})
+	if filter.Status != "" {
+		query = query.Where("status = ?", filter.Status)
+	}
+	if filter.TargetType != "" {
+		query = query.Where("target_type = ?", filter.TargetType)
+	}
+	if filter.UserID != nil {
+		query = query.Where("target_user_id = ?", *filter.UserID)
+	}
+	if strings.TrimSpace(filter.SessionID) != "" {
+		query = query.Where("target_session_id = ?", strings.TrimSpace(filter.SessionID))
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return DeliveryListResult{}, err
+	}
+
+	var deliveries []model.NotificationDelivery
+	if err := query.
+		Order("created_at DESC, id DESC").
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Find(&deliveries).Error; err != nil {
+		return DeliveryListResult{}, err
+	}
+
+	items := make([]DeliveryRecord, 0, len(deliveries))
+	for _, delivery := range deliveries {
+		payload, err := unmarshalPayload(delivery.PayloadJSON)
+		if err != nil {
+			return DeliveryListResult{}, err
+		}
+		items = append(items, DeliveryRecord{
+			DeliveryID:      delivery.DeliveryID,
+			SourceService:   delivery.SourceService,
+			SourceRequestID: delivery.SourceRequestID,
+			TargetType:      delivery.TargetType,
+			TargetUserID:    delivery.TargetUserID,
+			TargetSessionID: delivery.TargetSessionID,
+			Level:           delivery.Level,
+			Title:           delivery.Title,
+			Message:         delivery.Message,
+			Payload:         payload,
+			Status:          delivery.Status,
+			DedupeKey:       delivery.DedupeKey,
+			AttemptCount:    delivery.AttemptCount,
+			LastDeliveredAt: delivery.LastDeliveredAt,
+			AcknowledgedAt:  delivery.AcknowledgedAt,
+			CreatedAt:       delivery.CreatedAt,
+			ExpiresAt:       delivery.ExpiresAt,
+		})
+	}
+
+	return DeliveryListResult{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
 }
 
 func (s *Service) Ack(deliveryID, sessionID string, userID *uint) error {
@@ -339,4 +446,25 @@ func userPtr(userID uint) *uint {
 
 func validateOwnershipErr(err error) bool {
 	return err != nil && (errors.Is(err, gorm.ErrRecordNotFound) || err.Error() == "delivery does not belong to this session" || err.Error() == "delivery does not belong to this user")
+}
+
+func (s *Service) deliveryStatusCounts() (map[string]int, error) {
+	type statusCount struct {
+		Status string
+		Count  int
+	}
+
+	var rows []statusCount
+	if err := s.db.Model(&model.NotificationDelivery{}).
+		Select("status, count(*) as count").
+		Group("status").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]int, len(rows))
+	for _, row := range rows {
+		result[row.Status] = row.Count
+	}
+	return result, nil
 }

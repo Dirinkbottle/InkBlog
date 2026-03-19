@@ -1,6 +1,10 @@
 package notification
 
-import "sync"
+import (
+	"sort"
+	"sync"
+	"time"
+)
 
 type StreamEvent struct {
 	Event string
@@ -8,10 +12,11 @@ type StreamEvent struct {
 }
 
 type StreamConnection struct {
-	SessionID string
-	UserID    *uint
-	Events    chan StreamEvent
-	Replaced  chan struct{}
+	SessionID   string
+	UserID      *uint
+	ConnectedAt time.Time
+	Events      chan StreamEvent
+	Replaced    chan struct{}
 }
 
 type ConnectionRegistry struct {
@@ -30,6 +35,10 @@ func NewConnectionRegistry() *ConnectionRegistry {
 func (r *ConnectionRegistry) Register(conn *StreamConnection) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	if conn.ConnectedAt.IsZero() {
+		conn.ConnectedAt = time.Now()
+	}
 
 	if existing, ok := r.sessions[conn.SessionID]; ok {
 		select {
@@ -100,6 +109,39 @@ func (r *ConnectionRegistry) AllSessions() []StreamIdentity {
 			UserID:    conn.UserID,
 		})
 	}
+	return result
+}
+
+func (r *ConnectionRegistry) Connections() []OnlineSession {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make([]OnlineSession, 0, len(r.sessions))
+	for sessionID, conn := range r.sessions {
+		session := OnlineSession{
+			SessionID: sessionID,
+			UserID:    conn.UserID,
+		}
+		if !conn.ConnectedAt.IsZero() {
+			connectedAt := conn.ConnectedAt
+			session.ConnectedAt = &connectedAt
+		}
+		result = append(result, session)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		switch {
+		case result[i].ConnectedAt == nil && result[j].ConnectedAt == nil:
+			return result[i].SessionID < result[j].SessionID
+		case result[i].ConnectedAt == nil:
+			return false
+		case result[j].ConnectedAt == nil:
+			return true
+		default:
+			return result[i].ConnectedAt.After(*result[j].ConnectedAt)
+		}
+	})
+
 	return result
 }
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -45,6 +46,77 @@ func SetupRouter(service *Service) *gin.Engine {
 		}
 
 		utils.Info("[Notification] queued deliveries=%d target=%s source_service=%s request_id=%s", count, req.Target.Type, req.SourceService, req.SourceRequestID)
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "queued",
+			"data": gin.H{
+				"created": count,
+			},
+		})
+	})
+
+	controlPanel := r.Group("/internal/control/panel")
+	controlPanel.Use(controlPanelAuthMiddleware(settings))
+	controlPanel.GET("/summary", func(c *gin.Context) {
+		summary, err := service.PanelSummary()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "success",
+			"data":    summary,
+		})
+	})
+
+	controlPanel.GET("/sessions", func(c *gin.Context) {
+		sessions := service.OnlineSessions()
+		c.JSON(http.StatusOK, gin.H{
+			"message": "success",
+			"data": gin.H{
+				"total": len(sessions),
+				"list":  sessions,
+			},
+		})
+	})
+
+	controlPanel.GET("/deliveries", func(c *gin.Context) {
+		filter, err := parseDeliveryFilter(c)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
+
+		result, err := service.ListDeliveries(filter)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "success",
+			"data":    result,
+		})
+	})
+
+	controlPanel.POST("/send", func(c *gin.Context) {
+		var req PanelSendRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "invalid request: " + err.Error()})
+			return
+		}
+
+		count, err := service.Enqueue(EnqueueRequest{
+			SourceService:   "core-control",
+			SourceRequestID: c.GetString(RequestIDContextKey),
+			Target:          req.Target,
+			Toast:           req.Toast,
+		})
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "queued",
@@ -205,6 +277,24 @@ func serviceAuthMiddleware(settings Settings) gin.HandlerFunc {
 	}
 }
 
+func controlPanelAuthMiddleware(settings Settings) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "missing authorization"})
+			return
+		}
+
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" || parts[1] != settings.ControlToken {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "invalid authorization"})
+			return
+		}
+
+		c.Next()
+	}
+}
+
 func resolveStreamIdentity(c *gin.Context) (StreamIdentity, error) {
 	sessionID := normalizeSessionID(c.GetHeader(ClientSessionHeader))
 	if sessionID == "" {
@@ -259,4 +349,34 @@ func writeSSE(writer http.ResponseWriter, event string, data interface{}) error 
 	}
 
 	return nil
+}
+
+func parseDeliveryFilter(c *gin.Context) (DeliveryFilter, error) {
+	filter := DeliveryFilter{
+		Status:     strings.TrimSpace(c.Query("status")),
+		TargetType: strings.TrimSpace(c.Query("target_type")),
+		SessionID:  strings.TrimSpace(c.Query("session_id")),
+		Page:       parsePositiveQueryInt(c.DefaultQuery("page", "1"), 1),
+		PageSize:   parsePositiveQueryInt(c.DefaultQuery("page_size", "20"), 20),
+	}
+
+	userIDValue := strings.TrimSpace(c.Query("user_id"))
+	if userIDValue != "" {
+		parsed, err := strconv.ParseUint(userIDValue, 10, 64)
+		if err != nil {
+			return DeliveryFilter{}, fmt.Errorf("invalid user_id")
+		}
+		userID := uint(parsed)
+		filter.UserID = &userID
+	}
+
+	return filter, nil
+}
+
+func parsePositiveQueryInt(value string, fallback int) int {
+	parsed, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil || parsed <= 0 {
+		return fallback
+	}
+	return parsed
 }

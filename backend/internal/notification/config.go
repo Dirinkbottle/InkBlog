@@ -14,6 +14,7 @@ type Settings struct {
 	Port              string
 	ServiceURL        string
 	ServiceToken      string
+	ControlToken      string
 	HeartbeatInterval time.Duration
 	RequestTimeout    time.Duration
 }
@@ -54,6 +55,11 @@ func LoadSettings() Settings {
 		"inkblog-notification-dev-token",
 	)
 
+	controlToken := firstNonEmpty(
+		os.Getenv("SERVICE_CONTROL_TOKEN"),
+		"inkblog-service-control-dev-token",
+	)
+
 	heartbeatSeconds := firstPositiveInt(
 		getEnvInt("NOTIFICATION_HEARTBEAT_SECONDS"),
 		readConfigInt(func() int {
@@ -80,6 +86,7 @@ func LoadSettings() Settings {
 		Port:              port,
 		ServiceURL:        serviceURL,
 		ServiceToken:      serviceToken,
+		ControlToken:      controlToken,
 		HeartbeatInterval: time.Duration(heartbeatSeconds) * time.Second,
 		RequestTimeout:    time.Duration(requestTimeoutSeconds) * time.Second,
 	}

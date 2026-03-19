@@ -183,6 +183,8 @@ func SetupRouter() *gin.Engine {
 				settings.GET("", handlers.AdminGetSettings)
 				settings.PUT("", handlers.AdminUpdateSettings)
 			}
+
+			adminGroup.GET("/blog-data/overview", admin.GetBlogDataOverview)
 		}
 	}
 

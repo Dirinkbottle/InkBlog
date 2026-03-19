@@ -109,7 +109,11 @@ func InitDatabaseFromAppConfig(appConfig *model.AppConfig) error {
 		return err
 	}
 
-	return database.EnsureNotificationSchema()
+	if err := database.EnsureNotificationSchema(); err != nil {
+		return err
+	}
+
+	return database.EnsureAnalyticsSchema()
 }
 
 func normalizeStringSlice(value []string, fallback []string) []string {

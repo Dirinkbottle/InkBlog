@@ -1,101 +1,149 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card'
-import { FileText, Eye, Users, MessageSquare } from 'lucide-react'
-import { adminAPI } from '@/services/api'
-import api from '@/services/api'
-import { formatDate } from '@/lib/utils'
+import { ChevronDown, LockKeyhole, RefreshCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useErrorToast } from '@/hooks/useErrorToast'
+import { useServiceSlots } from '@/hooks/useServiceSlots'
+import {
+  getPanelSlots,
+  getRegisteredSlots,
+  renderServiceOverviewCard,
+} from '@/components/admin/services/registry'
 
 export default function Dashboard() {
-  const [stats, setStats] = useState(null)
-  const [recentPosts, setRecentPosts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+  const { showError } = useErrorToast()
+  const { slots, controlLock, error, loading, refreshing, fetchSlots, runAction } = useServiceSlots()
+
+  const registeredSlots = useMemo(() => getRegisteredSlots(slots), [slots])
+  const panelSlots = useMemo(() => getPanelSlots(registeredSlots), [registeredSlots])
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsRes, postsRes] = await Promise.all([
-          api.get('/statistics'),
-          adminAPI.getPostList({ page: 1, page_size: 5 }),
-        ])
-        setStats(statsRes.data)
-        setRecentPosts(postsRes.data?.posts || [])
-      } catch (error) {
-        // 静默处理
-      } finally {
-        setLoading(false)
+    const handleOutsideClick = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false)
       }
     }
-    fetchData()
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [])
 
-  const statCards = [
-    { title: '总文章数', value: stats?.post_count ?? '-', icon: FileText, color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900' },
-    { title: '总浏览量', value: stats?.view_count ?? '-', icon: Eye, color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900' },
-    { title: '用户数', value: stats?.user_count ?? '-', icon: Users, color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900' },
-    { title: '评论数', value: stats?.comment_count ?? '-', icon: MessageSquare, color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900' },
-  ]
+  const handleRefresh = async () => {
+    try {
+      await fetchSlots({ silent: true })
+    } catch (error) {
+      showError({
+        title: '服务总览加载失败',
+        message: error.message || '微服务状态获取失败',
+      })
+    }
+  }
+
+  const handleServiceAction = async (serviceId, action) => {
+    try {
+      await runAction(serviceId, action)
+      await fetchSlots({ silent: true })
+    } catch (error) {
+      showError({
+        title: error.code === 409 ? '服务操作已锁定' : '服务操作失败',
+        message: error.code === 409
+          ? '当前已有服务操作进行中，请等待上一项动作完成。'
+          : error.message || `${action} 执行失败`,
+      })
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">仪表盘</h1>
-        <p className="text-muted-foreground mt-2">欢迎回来，查看您的博客统计数据</p>
+        <p className="text-sm uppercase tracking-[0.26em] text-zinc-400">Service Console</p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-950">仪表盘</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500">
+          后台首页回归纯概览视图，只展示微服务状态与生命周期控制；有管理面板的服务通过 `其它`
+          单独跳转。
+        </p>
       </div>
 
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <Card key={stat.title}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                    <p className="text-3xl font-bold mt-2">{loading ? '-' : stat.value}</p>
-                  </div>
-                  <div className={`${stat.bgColor} p-3 rounded-lg`}>
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+      {controlLock && (
+        <div className="rounded-[24px] border border-zinc-200 bg-zinc-50/80 px-5 py-4 text-sm text-zinc-700">
+          <div className="flex items-center gap-2 font-medium text-zinc-950">
+            <LockKeyhole className="h-4 w-4" />
+            服务动作保护已启用
+          </div>
+          <p className="mt-2">
+            当前 {controlLock.service_id} 正在执行 {controlLock.action}，完成前所有生命周期按钮都不可重复点击。
+          </p>
+        </div>
+      )}
 
-      {/* 最近文章 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>最近文章</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-muted-foreground">加载中...</p>
-          ) : recentPosts.length === 0 ? (
-            <p className="text-muted-foreground">暂无数据</p>
-          ) : (
-            <div className="space-y-3">
-              {recentPosts.map((post) => (
-                <div key={post.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
-                  <div className="flex-1 min-w-0">
+      <Card className="rounded-[28px] border-zinc-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
+        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle className="text-2xl text-zinc-950">微服务槽位总览</CardTitle>
+            <p className="text-sm text-zinc-500">
+              槽位卡片只保留状态展示和启动/停止/重启，管理面板入口统一收纳到右侧下拉。
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
+              onClick={() => void handleRefresh()}
+              disabled={refreshing}
+            >
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              {refreshing ? '刷新中...' : '刷新状态'}
+            </Button>
+
+            <div className="relative" ref={menuRef}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                disabled={panelSlots.length === 0}
+              >
+                其它
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+
+              {menuOpen && panelSlots.length > 0 && (
+                <div className="absolute right-0 top-11 z-20 min-w-[220px] rounded-2xl border border-zinc-200 bg-white p-2 shadow-[0_14px_40px_rgba(15,23,42,0.12)]">
+                  {panelSlots.map((slot) => (
                     <Link
-                      to={`/admin/posts/${post.id}/edit`}
-                      className="text-sm font-medium hover:text-primary transition-colors truncate block"
+                      key={slot.id}
+                      to={slot.panelRoute}
+                      className="block rounded-xl px-4 py-3 text-sm text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
+                      onClick={() => setMenuOpen(false)}
                     >
-                      {post.title}
+                      <div className="font-medium">{slot.panelMenuLabel}</div>
+                      <div className="mt-1 text-xs text-zinc-500">{slot.description}</div>
                     </Link>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {post.status === 'published' ? '已发布' : '草稿'} · {formatDate(post.created_at)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground ml-4">
-                    <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{post.views || 0}</span>
-                    <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{post.comment_count || 0}</span>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {loading && registeredSlots.length === 0 ? (
+            <div className="text-sm text-zinc-500">正在加载微服务状态...</div>
+          ) : error && registeredSlots.length === 0 ? (
+            <div className="text-sm text-zinc-500">微服务状态加载失败，请点击右上角刷新重试。</div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {registeredSlots.map((slot) =>
+                renderServiceOverviewCard(slot, {
+                  controlLock,
+                  onAction: handleServiceAction,
+                })
+              )}
             </div>
           )}
         </CardContent>

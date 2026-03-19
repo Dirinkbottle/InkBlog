@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { attachClientSessionHeader } from './clientSession'
+import useAuthStore from '@/store/authStore'
 
 // 创建 axios 实例
 const api = axios.create({
@@ -16,8 +17,8 @@ let isRedirecting = false
 // 请求拦截器
 api.interceptors.request.use(
   (config) => {
-    // 从 localStorage 获取 token
-    const token = localStorage.getItem('token')
+    const stateToken = useAuthStore.getState().token
+    const token = stateToken || localStorage.getItem('token')
     config.headers = attachClientSessionHeader(config.headers || {})
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -39,8 +40,7 @@ api.interceptors.response.use(
       // 401 未授权，清除 token 并跳转到登录页
       if (error.response.status === 401 && !isRedirecting) {
         isRedirecting = true
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
+        useAuthStore.getState().logout()
         
         // 只在非登录/注册/安装页面时跳转
         const currentPath = window.location.pathname
@@ -174,6 +174,7 @@ export const adminAPI = {
   // 网站设置管理
   getSettings: (params) => api.get('/admin/settings', { params }),
   updateSettings: (data) => api.put('/admin/settings', data),
+  getBlogDataOverview: () => api.get('/admin/blog-data/overview'),
   
   // 文件上传
   uploadImage: (file) => {
@@ -200,6 +201,14 @@ export const adminAPI = {
   // 附件管理
   getPostAttachments: (postId) => api.get(`/admin/posts/${postId}/attachments`),
   deleteAttachment: (id) => api.delete(`/admin/attachments/${id}`),
+}
+
+export const serviceAdminAPI = {
+  getSlots: () => api.get('/admin/services'),
+  runAction: (serviceId, action) => api.post(`/admin/services/${serviceId}/actions`, { action }),
+  getPanel: (serviceId, panelPath, params) => api.get(`/admin/services/${serviceId}/panel/${panelPath}`, { params }),
+  postPanel: (serviceId, panelPath, data, params) =>
+    api.post(`/admin/services/${serviceId}/panel/${panelPath}`, data, { params }),
 }
 
 // 设置 API（公开）

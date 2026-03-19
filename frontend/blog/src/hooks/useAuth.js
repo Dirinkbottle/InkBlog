@@ -6,13 +6,13 @@ import { useNavigate } from 'react-router-dom'
 
 export function useAuth() {
   const navigate = useNavigate()
-  const { login, logout, updateUser, isAuthenticated, user, isAdmin } = useAuthStore()
+  const { login, logout, updateUser, isAuthenticated, token, user, isAdmin } = useAuthStore()
 
   // 获取用户信息
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ['profile'],
     queryFn: authAPI.getProfile,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !!token,
     retry: false,
     staleTime: 5 * 60 * 1000, // 5分钟内不重新请求
   })

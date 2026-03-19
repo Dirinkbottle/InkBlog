@@ -13,6 +13,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '/api/v1/admin/services': {
+        target: 'http://localhost:13170',
+        changeOrigin: true,
+      },
       '/api/v1/notifications': {
         target: 'http://localhost:13160',
         changeOrigin: true,

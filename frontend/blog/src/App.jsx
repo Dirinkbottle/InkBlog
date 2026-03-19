@@ -18,6 +18,7 @@ import VerifyEmailSuccess from './pages/VerifyEmailSuccess'
 import UserProfile from './pages/UserProfile/index'
 import AdminLayout from './components/admin/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
+import DataBoard from './pages/admin/DataBoard'
 import PostManage from './pages/admin/PostManage'
 import PostEdit from './pages/admin/PostEdit'
 import CategoryManage from './pages/admin/CategoryManage'
@@ -25,6 +26,7 @@ import TagManage from './pages/admin/TagManage'
 import UserManage from './pages/admin/UserManage'
 import CommentManage from './pages/admin/CommentManage'
 import SiteSettings from './pages/admin/SiteSettings'
+import ServiceManagement from './pages/admin/ServiceManagement'
 import UserLayout from './components/user/UserLayout'
 import UserPostManage from './pages/user/UserPostManage'
 import UserPostEdit from './pages/user/UserPostEdit'
@@ -144,6 +146,8 @@ function App() {
           {/* 管理员路由 */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="databoard" element={<DataBoard />} />
+            <Route path="services/:serviceId" element={<ServiceManagement />} />
             <Route path="posts" element={<PostManage />} />
             <Route path="posts/new" element={<PostEdit />} />
             <Route path="posts/:id/edit" element={<PostEdit />} />

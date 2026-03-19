@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"gorm.io/gorm"
 	"inkblog-backend/internal/database"
@@ -157,7 +158,8 @@ func GetPostByID(id uint) (*model.PostDetailResponse, error) {
 		return nil, errors.New("数据库查询失败")
 	}
 
-	db.Model(&post).Update("views", gorm.Expr("views + ?", 1))
+	_ = db.Model(&model.Post{}).Where("id = ?", post.ID).Update("views", gorm.Expr("views + ?", 1)).Error
+	_ = database.RecordBlogViewIncrement(time.Now())
 
 	var commentCount int64
 	db.Model(&model.Comment{}).
@@ -185,7 +187,8 @@ func GetPostBySlug(slug string) (*model.PostDetailResponse, error) {
 		return nil, errors.New("数据库查询失败")
 	}
 
-	db.Model(&post).Update("views", gorm.Expr("views + ?", 1))
+	_ = db.Model(&model.Post{}).Where("id = ?", post.ID).Update("views", gorm.Expr("views + ?", 1)).Error
+	_ = database.RecordBlogViewIncrement(time.Now())
 
 	var commentCount int64
 	db.Model(&model.Comment{}).
