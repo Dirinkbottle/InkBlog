@@ -12,7 +12,7 @@
     "dbname": "inkblog"
   },
   "jwt": {
-    "secret": "3f4ee055bef0a46211aa41c40241559fb11361edc236040a5978ee52d3aeba03",
+    "secret": "8cc286af0b99a062c13823863083ae2773a34febfc7a39e1c25ee62f0ba7fb34",
     "expiration": "24h",
     "refresh_expiration": "168h"
   },
@@ -25,5 +25,12 @@
       "*"
     ],
     "allow_credentials": false
+  },
+  "notification": {
+    "port": "",
+    "service_url": "",
+    "service_token": "",
+    "heartbeat_seconds": 0,
+    "request_timeout_seconds": 0
   }
 }
