@@ -1,0 +1,6 @@
+.claude
+uploads/
+logs/
+deploy/
+*/node_modules/
+.env.compose

@@ -1,6 +1,9 @@
-FROM node:20-alpine AS builder
+FROM docker.1ms.run/node:20-alpine AS builder
 
 WORKDIR /app
+
+ARG NPM_REGISTRY=https://registry.npmmirror.com/
+RUN npm config set registry "${NPM_REGISTRY}"
 
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -8,7 +11,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM docker.1ms.run/nginx:1.27-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html

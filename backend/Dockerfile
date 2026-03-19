@@ -1,7 +1,12 @@
 # 构建阶段
-FROM golang:1.21-alpine AS builder
+FROM docker.1ms.run/golang:1.21-alpine AS builder
 
 WORKDIR /app
+
+ARG GOPROXY=https://goproxy.cn,direct
+ARG GOSUMDB=sum.golang.google.cn
+ENV GOPROXY=${GOPROXY}
+ENV GOSUMDB=${GOSUMDB}
 
 # 复制依赖文件
 COPY go.mod go.sum ./
@@ -15,7 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -o notification ./cmd/notification
 
 # 运行阶段
-FROM alpine:latest
+FROM docker.1ms.run/alpine:latest
 
 WORKDIR /app
 

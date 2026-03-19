@@ -8,13 +8,13 @@ ENV_FILE="${ROOT_DIR}/.env.compose"
 COMPOSE_CMD=()
 
 resolve_compose_cmd() {
-  if command -v docker-compose >/dev/null 2>&1; then
-    COMPOSE_CMD=(docker-compose)
+  if docker compose version >/dev/null 2>&1; then
+    COMPOSE_CMD=(docker compose)
     return
   fi
 
-  if docker compose version >/dev/null 2>&1; then
-    COMPOSE_CMD=(docker compose)
+  if command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_CMD=(docker-compose)
     return
   fi
 
@@ -33,13 +33,22 @@ ensure_runtime_dirs() {
   mkdir -p \
     "${ROOT_DIR}/deploy/runtime" \
     "${ROOT_DIR}/deploy/uploads" \
-    "${ROOT_DIR}/deploy/logs" \
-    "${ROOT_DIR}/deploy/mysql" \
-    "${ROOT_DIR}/deploy/redis"
+    "${ROOT_DIR}/deploy/logs"
 }
 
 compose() {
   "${COMPOSE_CMD[@]}" --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" "$@"
+}
+
+using_legacy_docker_compose() {
+  [[ "${COMPOSE_CMD[0]}" == "docker-compose" ]]
+}
+
+prepare_up() {
+  if using_legacy_docker_compose; then
+    echo "检测到旧版 docker-compose，先执行 down --remove-orphans 以避开容器重建 bug。"
+    compose down --remove-orphans >/dev/null 2>&1 || true
+  fi
 }
 
 print_install_hint() {
@@ -97,6 +106,7 @@ case "${command}" in
   up)
     ensure_env_file
     ensure_runtime_dirs
+    prepare_up
     compose up -d --build
     print_install_hint
     ;;
