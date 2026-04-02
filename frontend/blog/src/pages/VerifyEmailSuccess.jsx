@@ -30,7 +30,7 @@ export default function VerifyEmailSuccess() {
       try {
         const response = await authAPI.verifyEmail(token)
         setStatus('success')
-        setMessage(response.data.message || '邮箱验证成功')
+        setMessage(response.message || '邮箱验证成功')
         
         // 3秒后跳转到登录页
         setTimeout(() => {
@@ -38,7 +38,7 @@ export default function VerifyEmailSuccess() {
         }, 3000)
       } catch (error) {
         setStatus('error')
-        setMessage(error.response?.data?.message || '验证失败，请重试')
+        setMessage(error.message || '验证失败，请重试')
       }
     }
 
@@ -47,8 +47,8 @@ export default function VerifyEmailSuccess() {
   }, [token])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-slate-50 to-sky-50 p-4">
+      <Card className="w-full max-w-md border-slate-200 bg-white shadow-sm">
         <CardHeader className="text-center">
           <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
                style={{
@@ -59,17 +59,17 @@ export default function VerifyEmailSuccess() {
             {status === 'success' && <CheckCircle className="h-8 w-8 text-green-600" />}
             {status === 'error' && <XCircle className="h-8 w-8 text-red-600" />}
           </div>
-          <CardTitle className="text-2xl">
+          <CardTitle className="text-2xl text-slate-900">
             {status === 'loading' && '验证中...'}
             {status === 'success' && '验证成功'}
             {status === 'error' && '验证失败'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-center text-muted-foreground">{message}</p>
+          <p className="text-center text-slate-600">{message}</p>
           
           {status === 'success' && (
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-slate-500">
               正在跳转到登录页面...
             </p>
           )}
@@ -77,14 +77,14 @@ export default function VerifyEmailSuccess() {
           {status === 'error' && (
             <div className="space-y-2">
               <Button
-                className="w-full"
+                className="w-full bg-slate-900 text-white hover:bg-slate-800"
                 onClick={() => navigate('/register')}
               >
                 重新注册
               </Button>
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full border-slate-300 text-slate-700"
                 onClick={() => navigate('/login')}
               >
                 返回登录
