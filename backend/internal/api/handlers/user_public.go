@@ -25,6 +25,14 @@ func GetPublicUserProfile(c *gin.Context) {
 		return
 	}
 
+	var publishedPostCount int64
+	if err := db.Model(&model.Post{}).
+		Where("author_id = ? AND status = ?", id, "published").
+		Count(&publishedPostCount).Error; err != nil {
+		utils.Warn("count published posts for public profile failed: user_id=%d err=%v", id, err)
+		publishedPostCount = 0
+	}
+
 	// 只返回公开信息（不包含邮箱等敏感信息）
 	utils.Success(c, gin.H{
 		"id":            user.ID,
@@ -33,6 +41,7 @@ func GetPublicUserProfile(c *gin.Context) {
 		"bio":           user.Bio,
 		"avatar_base64": user.AvatarBase64,
 		"created_at":    user.CreatedAt,
+		"published_post_count": publishedPostCount,
 	})
 }
 
