@@ -23,18 +23,28 @@ func GetCategories(c *gin.Context) {
 		PostCount int `json:"post_count"`
 	}
 
+	var categoryRows []struct {
+		CategoryID uint  `gorm:"column:category_id"`
+		Count      int64 `gorm:"column:count"`
+	}
+	if err := db.Model(&model.Post{}).
+		Select("category_id, COUNT(*) AS count").
+		Where("status = ? AND deleted_at IS NULL", "published").
+		Group("category_id").
+		Scan(&categoryRows).Error; err != nil {
+		utils.InternalServerError(c, "分类统计失败")
+		return
+	}
+	categoryCountMap := make(map[uint]int64, len(categoryRows))
+	for _, row := range categoryRows {
+		categoryCountMap[row.CategoryID] = row.Count
+	}
+
 	categoriesWithCount := make([]CategoryWithCount, 0, len(categories))
 	for _, category := range categories {
-		var count int64
-		if err := db.Model(&model.Post{}).
-			Where("category_id = ? AND status = ?", category.ID, "published").
-			Count(&count).Error; err != nil {
-			utils.InternalServerError(c, "分类统计失败")
-			return
-		}
 		categoriesWithCount = append(categoriesWithCount, CategoryWithCount{
 			Category:  category,
-			PostCount: int(count),
+			PostCount: int(categoryCountMap[category.ID]),
 		})
 	}
 
@@ -57,19 +67,28 @@ func GetTags(c *gin.Context) {
 		PostCount int `json:"post_count"`
 	}
 
+	var tagRows []struct {
+		TagID  uint  `gorm:"column:tag_id"`
+		Count  int64 `gorm:"column:count"`
+	}
+	if err := db.Table("post_tags").
+		Select("post_tags.tag_id, COUNT(*) AS count").
+		Joins("INNER JOIN posts ON posts.id = post_tags.post_id AND posts.status = ? AND posts.deleted_at IS NULL", "published").
+		Group("post_tags.tag_id").
+		Scan(&tagRows).Error; err != nil {
+		utils.InternalServerError(c, "标签统计失败")
+		return
+	}
+	tagCountMap := make(map[uint]int64, len(tagRows))
+	for _, row := range tagRows {
+		tagCountMap[row.TagID] = row.Count
+	}
+
 	tagsWithCount := make([]TagWithCount, 0, len(tags))
 	for _, tag := range tags {
-		var count int64
-		// 通过关联表统计
-		if err := db.Table("post_tags").Where("tag_id = ?", tag.ID).
-			Joins("INNER JOIN posts ON posts.id = post_tags.post_id AND posts.status = ? AND posts.deleted_at IS NULL", "published").
-			Count(&count).Error; err != nil {
-			utils.InternalServerError(c, "标签统计失败")
-			return
-		}
 		tagsWithCount = append(tagsWithCount, TagWithCount{
 			Tag:       tag,
-			PostCount: int(count),
+			PostCount: int(tagCountMap[tag.ID]),
 		})
 	}
 
