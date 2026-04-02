@@ -60,7 +60,7 @@ func GetPublicUserPosts(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	if pageSize < 1 || pageSize > 100 {
+	if pageSize < 1 || pageSize > 50 {
 		pageSize = 10
 	}
 
@@ -78,5 +78,12 @@ func GetPublicUserPosts(c *gin.Context) {
 		return
 	}
 
-	utils.Success(c, result)
+	utils.Success(c, gin.H{
+		"user": gin.H{
+			"id":           user.ID,
+			"username":     user.Username,
+			"display_name": user.DisplayName,
+		},
+		"posts": result,
+	})
 }
