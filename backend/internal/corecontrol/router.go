@@ -18,6 +18,8 @@ func SetupRouter(service *Service) *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(apimiddleware.CORS())
 
+	registerDeployRoutes(r, service)
+
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
