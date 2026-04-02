@@ -16,6 +16,9 @@ func CheckStatus(c *gin.Context) {
 			"installed": true,
 		})
 		return
+	} else if !os.IsNotExist(err) {
+		utils.InternalServerError(c, "读取安装状态失败")
+		return
 	}
 
 	utils.Success(c, gin.H{
