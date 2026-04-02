@@ -112,6 +112,14 @@ export default function NotificationServicePanel({ serviceId = 'notification', s
       setSendState({ loading: false, message: '', error: 'user 目标必须填写用户 ID' })
       return
     }
+    const parsedUserID = Number(sendForm.userId)
+    if (
+      sendForm.targetType === 'user' &&
+      (!Number.isInteger(parsedUserID) || parsedUserID <= 0)
+    ) {
+      setSendState({ loading: false, message: '', error: '用户 ID 必须是正整数' })
+      return
+    }
 
     let payload = {}
     try {
@@ -128,7 +136,7 @@ export default function NotificationServicePanel({ serviceId = 'notification', s
         target.session_id = sendForm.sessionId.trim()
       }
       if (sendForm.targetType === 'user') {
-        target.user_id = Number(sendForm.userId)
+        target.user_id = parsedUserID
       }
 
       const response = await serviceAdminAPI.postPanel(serviceId, 'send', {
@@ -396,9 +404,11 @@ export default function NotificationServicePanel({ serviceId = 'notification', s
                     <Label htmlFor="send-user-id">用户 ID</Label>
                     <Input
                       id="send-user-id"
+                      type="number"
+                      min="1"
                       value={sendForm.userId}
                       onChange={(event) => setSendForm((prev) => ({ ...prev, userId: event.target.value }))}
-                      placeholder="目标用户 ID"
+                      placeholder="目标用户 ID（正整数）"
                     />
                   </div>
                 )}
