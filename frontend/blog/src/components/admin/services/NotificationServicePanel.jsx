@@ -323,8 +323,20 @@ export default function NotificationServicePanel({ serviceId = 'notification', s
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="text-sm text-zinc-500">
-                共 {deliveries.total || 0} 条，第 {deliveries.page || 1} 页
+              <div className="flex items-center gap-3 text-sm text-zinc-500">
+                <span>共 {deliveries.total || 0} 条，第 {deliveries.page || 1} 页</span>
+                <label className="inline-flex items-center gap-2">
+                  每页
+                  <select
+                    className="h-8 rounded-md border border-zinc-200 bg-white px-2 text-xs text-zinc-700"
+                    value={filters.pageSize}
+                    onChange={(event) => updateFilter('pageSize', Number(event.target.value) || 10)}
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </label>
               </div>
               <div className="flex gap-2">
                 <Button
