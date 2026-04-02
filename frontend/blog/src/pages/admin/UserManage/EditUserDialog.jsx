@@ -1,9 +1,19 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 
 export default function EditUserDialog({ user, formData, setFormData, onSubmit, onClose }) {
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
   const handleRoleChange = (newRole) => {
     if (newRole === 'admin') {
       setFormData({
@@ -42,9 +52,9 @@ export default function EditUserDialog({ user, formData, setFormData, onSubmit, 
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-background border rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" onClick={onClose}>
+      <div className="bg-white border border-slate-200 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-lg" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-xl font-bold text-slate-900 mb-4">
           编辑用户: {user.username}
         </h2>
         <form onSubmit={onSubmit} className="space-y-4">
