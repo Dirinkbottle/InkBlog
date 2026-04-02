@@ -56,7 +56,7 @@ export default function MetricTrendCard({
         )}
       >
         <div className="rounded-[24px] border border-zinc-200 bg-zinc-50/70 p-4">
-          <MiniTrendChart points={points} mode={mode} accent={accent} />
+          <MiniTrendChart points={points} mode={mode} accent={accent} label={title} />
           {hint && <p className="mt-3 text-xs text-zinc-500">{hint}</p>}
         </div>
       </div>

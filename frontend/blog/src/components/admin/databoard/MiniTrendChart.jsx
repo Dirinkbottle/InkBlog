@@ -20,11 +20,15 @@ function buildLinePath(values) {
     .join(' ')
 }
 
-export default function MiniTrendChart({ points = [], mode = 'line', accent = '#111827' }) {
+export default function MiniTrendChart({ points = [], mode = 'line', accent = '#111827', label = 'trend' }) {
   const values = useMemo(() => points.map((point) => Number(point.value) || 0), [points])
 
   if (values.length === 0) {
-    return <div className="h-24 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50" />
+    return (
+      <div className="h-24 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center text-xs text-zinc-400">
+        暂无趋势数据
+      </div>
+    )
   }
 
   const maxValue = Math.max(...values, 1)
@@ -36,8 +40,9 @@ export default function MiniTrendChart({ points = [], mode = 'line', accent = '#
       viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
       className="h-24 w-full"
       role="img"
-      aria-label="trend chart"
+      aria-label={`${label} 趋势图`}
     >
+      <title>{`${label} 趋势图`}</title>
       {[0.25, 0.5, 0.75].map((ratio) => (
         <line
           key={ratio}
