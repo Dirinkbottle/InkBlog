@@ -2,6 +2,7 @@ package comment
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"inkblog-backend/internal/database"
@@ -92,6 +93,12 @@ func CreateComment(c *gin.Context) {
 		utils.BadRequest(c, "请求参数错误: "+err.Error())
 		return
 	}
+	req.Content = strings.TrimSpace(req.Content)
+	if req.Content == "" {
+		notification.QueueWarning(c, "评论内容不能为空")
+		utils.BadRequest(c, "评论内容不能为空")
+		return
+	}
 
 	utils.Info("User %v creating comment for post %d", userID, req.PostID)
 
@@ -127,6 +134,12 @@ func CreateComment(c *gin.Context) {
 			utils.Warn("Reply attempted to non-existent comment %d", *req.ParentID)
 			notification.QueueWarning(c, "父评论不存在")
 			utils.BadRequest(c, "父评论不存在")
+			return
+		}
+		if parentComment.PostID != req.PostID {
+			utils.Warn("Reply comment %d does not belong to post %d", *req.ParentID, req.PostID)
+			notification.QueueWarning(c, "父评论与目标文章不匹配")
+			utils.BadRequest(c, "父评论与目标文章不匹配")
 			return
 		}
 	}
