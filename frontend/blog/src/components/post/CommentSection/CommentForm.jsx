@@ -5,10 +5,13 @@ import { Link } from 'react-router-dom'
 
 export default function CommentForm({ isAuthenticated, user, onSubmit, submitting }) {
   const [text, setText] = useState('')
+  const trimmed = text.trim()
+  const maxLength = 1000
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit(text)
+    if (!trimmed) return
+    onSubmit(trimmed)
     setText('')
   }
 
@@ -35,14 +38,16 @@ export default function CommentForm({ isAuthenticated, user, onSubmit, submittin
   return (
     <form onSubmit={handleSubmit} className="mb-6">
       <textarea
-        className="w-full px-4 py-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+        className="w-full px-4 py-3 border border-slate-300 rounded-lg resize-none bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"
         rows="4"
         placeholder="写下你的评论..."
         value={text}
+        maxLength={maxLength}
         onChange={(e) => setText(e.target.value)}
       />
-      <div className="flex justify-end mt-2">
-        <Button type="submit" disabled={submitting || !text.trim()}>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-xs text-slate-400">{trimmed.length}/{maxLength}</span>
+        <Button type="submit" disabled={submitting || !trimmed}>
           <Send className="h-4 w-4 mr-2" />
           {submitting ? '发送中...' : '发表评论'}
         </Button>
