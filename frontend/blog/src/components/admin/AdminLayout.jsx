@@ -135,6 +135,47 @@ export default function AdminLayout() {
 
       {/* 主内容区 */}
       <main className="flex-1 overflow-y-auto bg-white">
+        <div className="border-b border-zinc-200 bg-white px-4 py-4 md:hidden">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold text-zinc-950">管理面板</div>
+              <div className="text-xs text-zinc-500">{user?.username || '管理员'}</div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
+              onClick={() => logout()}
+              aria-label="移动端退出管理员账号"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              登出
+            </Button>
+          </div>
+
+          <nav className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              const isActive = item.isActive(location.pathname)
+              return (
+                <Link
+                  key={`mobile-${item.path}`}
+                  to={item.path}
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    isActive
+                      ? 'border-zinc-950 bg-zinc-950 text-white'
+                      : 'border-zinc-200 bg-white text-zinc-600'
+                  }`}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+
         <div className="p-6 md:p-8">
           <Outlet />
         </div>
