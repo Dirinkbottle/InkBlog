@@ -34,15 +34,18 @@ export default function MiniTrendChart({ points = [], mode = 'line', accent = '#
   const maxValue = Math.max(...values, 1)
   const barWidth = (VIEWBOX_WIDTH - PADDING_X * 2) / values.length
   const linePath = buildLinePath(values)
+  const modeLabel = mode === 'bar' ? '柱状图' : '折线图'
+  const chartSummary = `${label} ${modeLabel}，共 ${values.length} 个数据点`
 
   return (
     <svg
       viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
       className="h-24 w-full"
       role="img"
-      aria-label={`${label} 趋势图`}
+      aria-label={chartSummary}
     >
-      <title>{`${label} 趋势图`}</title>
+      <title>{chartSummary}</title>
+      <desc>{`最大值 ${maxValue}，以最近到更早顺序展示趋势。`}</desc>
       {[0.25, 0.5, 0.75].map((ratio) => (
         <line
           key={ratio}
