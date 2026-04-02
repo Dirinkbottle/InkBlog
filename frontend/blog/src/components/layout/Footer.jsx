@@ -6,13 +6,12 @@ export default function Footer() {
   const icpNumber = useSetting('icp_number', '')
 
   return (
-    <footer className="bg-background">
-      <div className="h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-      <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
+    <footer className="bg-white border-t border-slate-200">
+      <div className="container mx-auto px-4 py-6 text-center text-sm text-slate-500">
         <p>{footerText}</p>
         {icpNumber && (
           <p className="mt-2">
-            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 transition-colors">
               {icpNumber}
             </a>
           </p>
