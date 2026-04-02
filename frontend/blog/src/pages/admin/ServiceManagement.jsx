@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ChevronLeft, LockKeyhole, RefreshCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,6 +31,7 @@ export default function ServiceManagement() {
   const { serviceId } = useParams()
   const { showError } = useErrorToast()
   const { slots, controlLock, error, loading, refreshing, fetchSlots } = useServiceSlots()
+  const [lastSyncedAt, setLastSyncedAt] = useState('')
 
   const registeredSlots = useMemo(() => getRegisteredSlots(slots), [slots])
   const currentSlot = useMemo(
@@ -41,6 +42,7 @@ export default function ServiceManagement() {
   const handleRefresh = async () => {
     try {
       await fetchSlots({ silent: true })
+      setLastSyncedAt(new Date().toLocaleTimeString('zh-CN', { hour12: false }))
     } catch (error) {
       showError({
         title: '服务状态刷新失败',
@@ -48,6 +50,12 @@ export default function ServiceManagement() {
       })
     }
   }
+
+  useEffect(() => {
+    if (slots.length > 0) {
+      setLastSyncedAt(new Date().toLocaleTimeString('zh-CN', { hour12: false }))
+    }
+  }, [slots, controlLock?.action, controlLock?.service_id])
 
   if (loading && !currentSlot) {
     return <div className="text-sm text-zinc-500">正在加载服务面板...</div>
@@ -113,15 +121,18 @@ export default function ServiceManagement() {
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500">{currentSlot.description}</p>
         </div>
 
-        <Button
-          variant="outline"
-          className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
-          onClick={() => void handleRefresh()}
-          disabled={refreshing}
-        >
-          <RefreshCcw className="mr-2 h-4 w-4" />
-          {refreshing ? '刷新中...' : '刷新状态'}
-        </Button>
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <Button
+            variant="outline"
+            className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
+            onClick={() => void handleRefresh()}
+            disabled={refreshing}
+          >
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            {refreshing ? '刷新中...' : '刷新状态'}
+          </Button>
+          <div className="text-xs text-zinc-400">最近同步：{lastSyncedAt || '尚未同步'}</div>
+        </div>
       </div>
 
       <Card className="rounded-[28px] border-zinc-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
