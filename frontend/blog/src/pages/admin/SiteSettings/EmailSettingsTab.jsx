@@ -5,10 +5,10 @@ import { Label } from '@/components/ui/label'
 export default function EmailSettingsTab({ settings, setSettings }) {
   return (
     <div className="space-y-4 max-w-2xl">
-      <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg bg-white">
         <div className="flex-1">
           <Label htmlFor="email_verification_enabled">启用邮箱验证</Label>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             新用户注册需要验证邮箱后才能登录
           </p>
         </div>
@@ -23,7 +23,7 @@ export default function EmailSettingsTab({ settings, setSettings }) {
               email_verification_enabled: e.target.checked ? 'true' : 'false' 
             })}
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
         </label>
       </div>
 
@@ -34,6 +34,9 @@ export default function EmailSettingsTab({ settings, setSettings }) {
           type="number"
           value={settings.email_verification_expiry_hours}
           onChange={(e) => setSettings({ ...settings, email_verification_expiry_hours: e.target.value })}
+          className="border-slate-300 bg-white"
+          min={1}
+          max={168}
         />
       </div>
 
@@ -59,6 +62,8 @@ export default function EmailSettingsTab({ settings, setSettings }) {
               value={settings.email_smtp_port}
               onChange={(e) => setSettings({ ...settings, email_smtp_port: e.target.value })}
               placeholder="587"
+              min={1}
+              max={65535}
             />
           </div>
 
@@ -108,22 +113,22 @@ export default function EmailSettingsTab({ settings, setSettings }) {
             <Label htmlFor="email_library">邮件发送库</Label>
             <select
               id="email_library"
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md bg-white"
               value={settings.email_library}
               onChange={(e) => setSettings({ ...settings, email_library: e.target.value })}
             >
               <option value="gomail">Gomail（推荐）</option>
               <option value="email">Jordan-Wright Email</option>
             </select>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               默认使用 Gomail，如果遇到问题可切换到 Email 库
             </p>
           </div>
         </div>
       </div>
 
-      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-        <p className="text-sm text-yellow-800 dark:text-yellow-300">
+      <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+        <p className="text-sm text-yellow-800">
           <strong>提示：</strong>安装时创建的管理员账户无需邮箱验证。建议使用 Gmail、Outlook 等支持 SMTP 的邮箱服务。使用 Gmail 时需要开启"应用专用密码"。
         </p>
       </div>
