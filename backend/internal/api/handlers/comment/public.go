@@ -15,7 +15,19 @@ import (
 // GetPostComments 获取文章的评论列表（公开接口）
 func GetPostComments(c *gin.Context) {
 	db := database.GetDB()
-	postID := c.Param("postId")
+	postIDStr := c.Param("postId")
+	postID, err := strconv.ParseUint(postIDStr, 10, 32)
+	if err != nil || postID == 0 {
+		utils.BadRequest(c, "无效的文章ID")
+		return
+	}
+
+	// 公开接口仅允许访问已发布文章的评论
+	var post model.Post
+	if err := db.Select("id, status").First(&post, uint(postID)).Error; err != nil || post.Status != "published" {
+		utils.NotFound(c, "文章不存在")
+		return
+	}
 
 	// 获取分页参数
 	page := 1
@@ -31,14 +43,14 @@ func GetPostComments(c *gin.Context) {
 		}
 	}
 
-	utils.Info("Fetching comments for post ID: %s (page=%d, size=%d)", postID, page, pageSize)
+	utils.Info("Fetching comments for post ID: %d (page=%d, size=%d)", postID, page, pageSize)
 
 	// 统计总数
 	var total int64
 	if err := db.Model(&model.Comment{}).
-		Where("post_id = ? AND status = ?", postID, "approved").
+		Where("post_id = ? AND status = ?", uint(postID), "approved").
 		Count(&total).Error; err != nil {
-		utils.Error("Failed to count comments for post %s: %v", postID, err)
+		utils.Error("Failed to count comments for post %d: %v", postID, err)
 		utils.InternalServerError(c, "获取评论失败")
 		return
 	}
@@ -47,19 +59,19 @@ func GetPostComments(c *gin.Context) {
 	var comments []model.Comment
 	offset := (page - 1) * pageSize
 	if err := db.Preload("User").
-		Where("post_id = ? AND status = ?", postID, "approved").
+		Where("post_id = ? AND status = ?", uint(postID), "approved").
 		Order("created_at DESC").
 		Limit(pageSize).
 		Offset(offset).
 		Find(&comments).Error; err != nil {
-		utils.Error("Failed to fetch comments for post %s: %v", postID, err)
+		utils.Error("Failed to fetch comments for post %d: %v", postID, err)
 		utils.InternalServerError(c, "获取评论失败")
 		return
 	}
 
 	totalPages := (int(total) + pageSize - 1) / pageSize
 
-	utils.Info("Found %d/%d approved comments for post %s (page %d/%d)", len(comments), total, postID, page, totalPages)
+	utils.Info("Found %d/%d approved comments for post %d (page %d/%d)", len(comments), total, postID, page, totalPages)
 	utils.Success(c, gin.H{
 		"comments":    comments,
 		"total":       total,
