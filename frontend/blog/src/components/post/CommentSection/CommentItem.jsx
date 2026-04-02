@@ -23,6 +23,7 @@ export default function CommentItem({
   const isExpanded = expandedComments[comment.id]
   const hasReplies = comment.replies && comment.replies.length > 0
   const repliesCollapsed = collapsedReplies[comment.id]
+  const replyMax = 1000
 
   return (
     <div className={`${isReply ? 'ml-12' : ''} border-b pb-4 last:border-b-0`}>
@@ -44,11 +45,11 @@ export default function CommentItem({
             <span className="font-semibold text-sm">
               {comment.user?.username || '游客'}
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-slate-500" title={comment.created_at}>
               {formatCommentDate(comment.created_at)}
             </span>
             {comment.status === 'pending' && (
-              <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded">
+              <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded">
                 待审核
               </span>
             )}
@@ -122,10 +123,12 @@ export default function CommentItem({
                 rows="3"
                 placeholder={`回复 @${comment.user?.username || '游客'}...`}
                 value={replyText}
+                maxLength={replyMax}
                 onChange={(e) => setReplyText(e.target.value)}
                 autoFocus
               />
-              <div className="flex justify-end gap-2 mt-2">
+              <div className="flex items-center justify-between gap-2 mt-2">
+                <span className="text-xs text-slate-400">{replyText.trim().length}/{replyMax}</span>
                 <Button 
                   variant="outline" 
                   size="sm"
