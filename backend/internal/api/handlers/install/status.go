@@ -29,9 +29,11 @@ func CheckStatus(c *gin.Context) {
 // GetDefaultConfig 获取默认配置（从 config.yaml）
 func GetDefaultConfig(c *gin.Context) {
 	defaultConfig := gin.H{
+		"db_type": "mysql",
 		"db_host": "localhost",
 		"db_port": "3306",
 		"db_user": "root",
+		"db_pass": "",
 		"db_name": "inkblog",
 	}
 
