@@ -15,7 +15,9 @@ function DetailItem({ label, value }) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
       <div className="text-xs uppercase tracking-wide text-zinc-400">{label}</div>
-      <div className="mt-2 break-all text-sm font-medium text-zinc-950">{value || '--'}</div>
+      <div className="mt-2 break-all text-sm font-medium text-zinc-950" title={value || '--'}>
+        {value || '--'}
+      </div>
     </div>
   )
 }
@@ -28,7 +30,9 @@ export default function DefaultServicePanel({ snapshot, description }) {
           <CardTitle className="text-2xl text-zinc-950">{snapshot.name}</CardTitle>
           <p className="mt-2 text-sm text-zinc-500">{description}</p>
         </div>
-        <Badge className={getRuntimeTone(snapshot)}>{getRuntimeLabel(snapshot)}</Badge>
+        <Badge className={getRuntimeTone(snapshot)} aria-label={`${snapshot.name} 运行状态`}>
+          {getRuntimeLabel(snapshot)}
+        </Badge>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
