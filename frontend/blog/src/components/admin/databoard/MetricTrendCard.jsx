@@ -21,6 +21,7 @@ export default function MetricTrendCard({
   hint,
 }) {
   const chartVisible = mode !== 'hidden'
+  const nextMode = mode === 'line' ? 'bar' : mode === 'bar' ? 'hidden' : 'line'
 
   return (
     <div className="group rounded-[28px] border border-zinc-200 bg-white p-6 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-[0_16px_42px_rgba(15,23,42,0.08)] focus-within:shadow-[0_16px_42px_rgba(15,23,42,0.08)]">
@@ -41,8 +42,10 @@ export default function MetricTrendCard({
             size="sm"
             className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
             onClick={onToggleMode}
+            aria-label={`${title} 图表当前为 ${MODE_LABELS[mode]}，点击切换为 ${MODE_LABELS[nextMode]}`}
+            title={`切换为 ${MODE_LABELS[nextMode]}`}
           >
-            {MODE_LABELS[mode]}
+            切换为 {MODE_LABELS[nextMode]}
           </Button>
         </div>
       </div>
