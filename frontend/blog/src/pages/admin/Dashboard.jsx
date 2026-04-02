@@ -31,6 +31,19 @@ export default function Dashboard() {
     return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [])
 
+  useEffect(() => {
+    if (!menuOpen) return undefined
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [menuOpen])
+
   const handleRefresh = async () => {
     try {
       await fetchSlots({ silent: true })
@@ -107,17 +120,24 @@ export default function Dashboard() {
                 className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
                 onClick={() => setMenuOpen((prev) => !prev)}
                 disabled={panelSlots.length === 0}
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                aria-label="打开服务管理面板入口菜单"
               >
                 其它
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
 
               {menuOpen && panelSlots.length > 0 && (
-                <div className="absolute right-0 top-11 z-20 min-w-[220px] rounded-2xl border border-zinc-200 bg-white p-2 shadow-[0_14px_40px_rgba(15,23,42,0.12)]">
+                <div
+                  role="menu"
+                  className="absolute right-0 top-11 z-20 min-w-[220px] rounded-2xl border border-zinc-200 bg-white p-2 shadow-[0_14px_40px_rgba(15,23,42,0.12)]"
+                >
                   {panelSlots.map((slot) => (
                     <Link
                       key={slot.id}
                       to={slot.panelRoute}
+                      role="menuitem"
                       className="block rounded-xl px-4 py-3 text-sm text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
                       onClick={() => setMenuOpen(false)}
                     >
