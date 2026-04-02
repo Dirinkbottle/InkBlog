@@ -26,7 +26,7 @@ export default function CommentList({
 }) {
   if (loading) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="rounded-lg border border-slate-200 bg-white py-8 text-center text-slate-500">
         <p>加载评论中...</p>
       </div>
     )
@@ -34,8 +34,8 @@ export default function CommentList({
 
   if (comments.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
+      <div className="text-center py-10 border border-dashed border-slate-300 rounded-lg bg-white text-slate-500">
+        <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-40" />
         <p>暂无评论，来抢沙发吧！</p>
       </div>
     )
