@@ -13,7 +13,8 @@ export default function ScrollToTop() {
   }, [])
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' })
   }
 
   return (
@@ -21,7 +22,7 @@ export default function ScrollToTop() {
       variant="outline"
       size="icon"
       className={cn(
-        'fixed bottom-6 right-6 z-40 rounded-full shadow-lg transition-all duration-300',
+        'fixed bottom-4 right-4 md:bottom-6 md:right-6 z-40 rounded-full border-slate-300 bg-white/95 text-slate-700 shadow-sm transition-all duration-300 hover:bg-white hover:text-slate-900',
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
       )}
       onClick={scrollToTop}
