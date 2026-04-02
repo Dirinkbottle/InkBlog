@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 export default function EditorSection({ title, setTitle, content, setContent, handleImageUpload }) {
+  const titleLimit = 255
+
   // 添加粘贴上传功能
   useEffect(() => {
     const handlePaste = async (event) => {
@@ -41,9 +43,9 @@ export default function EditorSection({ title, setTitle, content, setContent, ha
   }, [handleImageUpload, setContent])
 
   return (
-    <Card>
+    <Card className="border-slate-200 bg-white shadow-sm">
       <CardHeader>
-        <CardTitle>文章内容</CardTitle>
+        <CardTitle className="text-slate-900">文章内容</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
@@ -53,13 +55,15 @@ export default function EditorSection({ title, setTitle, content, setContent, ha
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="请输入文章标题"
-            className="text-lg"
+            className="text-lg border-slate-300 bg-white"
+            maxLength={titleLimit}
           />
+          <p className="mt-1 text-xs text-slate-500">{title.length}/{titleLimit}</p>
         </div>
 
         <div>
           <Label>正文</Label>
-          <div className="border rounded-lg overflow-hidden mt-2">
+          <div className="border border-slate-200 rounded-lg overflow-hidden mt-2">
             <div data-color-mode="light">
               <MDEditor
                 value={content}
