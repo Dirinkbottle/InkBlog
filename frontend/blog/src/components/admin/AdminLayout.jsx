@@ -18,12 +18,12 @@ export default function AdminLayout() {
   // 检查是否是管理员
   if (user?.role !== 'admin') {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-destructive">权限不足</h1>
-          <p className="text-muted-foreground">您没有访问管理面板的权限</p>
+          <h1 className="text-4xl font-bold text-rose-600">权限不足</h1>
+          <p className="text-slate-600">您没有访问管理面板的权限</p>
           <Link to="/">
-            <Button>返回首页</Button>
+            <Button className="bg-slate-900 text-white hover:bg-slate-800">返回首页</Button>
           </Link>
         </div>
       </div>
@@ -125,6 +125,7 @@ export default function AdminLayout() {
             variant="outline"
             className="w-full border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
             onClick={() => logout()}
+            aria-label="退出管理员账号"
           >
             <LogOut className="h-4 w-4 mr-2" />
             登出
