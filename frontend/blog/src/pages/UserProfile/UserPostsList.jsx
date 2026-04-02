@@ -6,11 +6,18 @@ import { Button } from '../../components/ui/button'
 import PostCard from '../../components/post/PostCard'
 
 export default function UserPostsList({ posts, loading, page, totalPages, setPage }) {
+  const goPrev = () => {
+    if (page > 1) setPage(page - 1)
+  }
+  const goNext = () => {
+    if (page < totalPages) setPage(page + 1)
+  }
+
   return (
-    <Card>
+    <Card className="border-slate-200 bg-white shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <FileText className="h-5 w-5 mr-2" />
+        <CardTitle className="flex items-center text-slate-900">
+          <FileText className="h-5 w-5 mr-2 text-sky-600" />
           发表的文章
         </CardTitle>
       </CardHeader>
@@ -22,7 +29,7 @@ export default function UserPostsList({ posts, loading, page, totalPages, setPag
             <Skeleton className="h-32 w-full" />
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-12 text-slate-500 border border-dashed border-slate-300 rounded-lg">
             该用户还没有发表文章
           </div>
         ) : (
@@ -34,21 +41,23 @@ export default function UserPostsList({ posts, loading, page, totalPages, setPag
             </div>
 
             {totalPages > 1 && (
-              <div className="flex justify-center items-center space-x-2 mt-8">
+              <div className="flex justify-center items-center space-x-2 mt-8 rounded-lg border border-slate-200 bg-slate-50 p-3">
                 <Button
                   variant="outline"
-                  onClick={() => setPage(page - 1)}
+                  onClick={goPrev}
                   disabled={page <= 1}
+                  className="border-slate-300 text-slate-700"
                 >
                   上一页
                 </Button>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-slate-500">
                   第 {page} / {totalPages} 页
                 </span>
                 <Button
                   variant="outline"
-                  onClick={() => setPage(page + 1)}
+                  onClick={goNext}
                   disabled={page >= totalPages}
+                  className="border-slate-300 text-slate-700"
                 >
                   下一页
                 </Button>
