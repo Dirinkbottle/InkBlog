@@ -1,6 +1,6 @@
 import React from 'react'
 import { Card, CardContent } from '../../components/ui/card'
-import { User, Calendar } from 'lucide-react'
+import { User, Calendar, FileText } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export default function UserInfoCard({ user }) {
@@ -33,9 +33,15 @@ export default function UserInfoCard({ user }) {
             {user.bio && (
               <p className="text-slate-600 mb-4">{user.bio}</p>
             )}
-            <div className="flex items-center text-sm text-slate-500">
-              <Calendar className="h-4 w-4 mr-1" />
-              <span>加入于 {formatDate(user.created_at)}</span>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+              <span className="inline-flex items-center">
+                <Calendar className="mr-1 h-4 w-4" />
+                加入于 {formatDate(user.created_at)}
+              </span>
+              <span className="inline-flex items-center">
+                <FileText className="mr-1 h-4 w-4" />
+                已发布 {user.published_post_count ?? 0} 篇
+              </span>
             </div>
           </div>
         </div>
