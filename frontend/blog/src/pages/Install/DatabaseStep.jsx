@@ -10,28 +10,33 @@ export default function DatabaseStep({ config, onChange, onBack, onTest, loading
       <h3 className="text-xl font-bold mb-4">数据库配置</h3>
       
       <div>
-        <Label>数据库类型</Label>
+        <Label htmlFor="install-db-type">数据库类型</Label>
         <select
+          id="install-db-type"
           value={config.db_type}
           onChange={(e) => onChange('db_type', e.target.value)}
-          className="w-full h-10 px-3 py-2 border rounded-md mt-1"
+          className="mt-1 h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
         >
           <option value="mysql">MySQL</option>
           <option value="postgres">PostgreSQL</option>
         </select>
+        <p className="mt-1 text-xs text-zinc-500">支持 MySQL 与 PostgreSQL。</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>主机地址</Label>
+          <Label htmlFor="install-db-host">主机地址</Label>
           <Input
+            id="install-db-host"
             value={config.db_host}
             onChange={(e) => onChange('db_host', e.target.value)}
           />
         </div>
         <div>
-          <Label>端口</Label>
+          <Label htmlFor="install-db-port">端口</Label>
           <Input
+            id="install-db-port"
+            inputMode="numeric"
             value={config.db_port}
             onChange={(e) => onChange('db_port', e.target.value)}
           />
@@ -39,8 +44,9 @@ export default function DatabaseStep({ config, onChange, onBack, onTest, loading
       </div>
 
       <div>
-        <Label>数据库名</Label>
+        <Label htmlFor="install-db-name">数据库名</Label>
         <Input
+          id="install-db-name"
           value={config.db_name}
           onChange={(e) => onChange('db_name', e.target.value)}
           placeholder="inkblog"
@@ -48,16 +54,18 @@ export default function DatabaseStep({ config, onChange, onBack, onTest, loading
       </div>
 
       <div>
-        <Label>用户名</Label>
+        <Label htmlFor="install-db-user">用户名</Label>
         <Input
+          id="install-db-user"
           value={config.db_user}
           onChange={(e) => onChange('db_user', e.target.value)}
         />
       </div>
 
       <div>
-        <Label>密码</Label>
+        <Label htmlFor="install-db-pass">密码</Label>
         <Input
+          id="install-db-pass"
           type="password"
           value={config.db_pass}
           onChange={(e) => onChange('db_pass', e.target.value)}
