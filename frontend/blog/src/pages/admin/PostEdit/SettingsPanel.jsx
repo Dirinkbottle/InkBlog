@@ -15,10 +15,12 @@ export default function SettingsPanel({
   selectedTags,
   handleToggleTag,
 }) {
+  const summaryLimit = 400
+
   return (
-    <Card>
+    <Card className="border-slate-200 bg-white shadow-sm">
       <CardHeader>
-        <CardTitle>文章设置</CardTitle>
+        <CardTitle className="text-slate-900">文章设置</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
@@ -28,8 +30,10 @@ export default function SettingsPanel({
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             placeholder="留空将自动生成"
-            className="w-full h-24 px-3 py-2 text-sm rounded-md border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-24 px-3 py-2 text-sm rounded-md border border-slate-300 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-sky-400"
+            maxLength={summaryLimit}
           />
+          <p className="mt-1 text-xs text-slate-500">{summary.length}/{summaryLimit}</p>
         </div>
 
         <div>
@@ -39,6 +43,7 @@ export default function SettingsPanel({
             value={coverImage}
             onChange={(e) => setCoverImage(e.target.value)}
             placeholder="https://..."
+            className="border-slate-300 bg-white"
           />
         </div>
 
@@ -48,7 +53,7 @@ export default function SettingsPanel({
             id="category"
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full h-10 px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-10 px-3 py-2 text-sm rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"
             required
           >
             {categories.map((cat) => (
@@ -61,6 +66,7 @@ export default function SettingsPanel({
 
         <div>
           <Label>标签</Label>
+          <p className="text-xs text-slate-500 mt-1">已选 {selectedTags.length} 个标签</p>
           <div className="flex flex-wrap gap-2 mt-2">
             {tags.map((tag) => (
               <button
@@ -69,8 +75,8 @@ export default function SettingsPanel({
                 onClick={() => handleToggleTag(tag.id)}
                 className={`px-3 py-1 text-sm rounded-full border transition-colors ${
                   selectedTags.includes(tag.id)
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'border-input hover:bg-accent'
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'border-slate-300 text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 {tag.name}
