@@ -54,11 +54,16 @@ services:
         mkdir -p /app/runtime /app/uploads /app/logs
         ln -sf /app/runtime/config.json /app/config.json
         ln -sf /app/runtime/install.lock /app/install.lock
+        if [ -x /app/release/bin/main ]; then
+          echo "[backend] using release binary /app/release/bin/main"
+          exec /app/release/bin/main
+        fi
         exec ./main
     volumes:
       - ./deploy/runtime:/app/runtime
       - ./deploy/uploads:/app/uploads
       - ./deploy/logs:/app/logs
+      - ./deploy/release:/app/release
     depends_on:
       mysql:
         condition: service_healthy
@@ -94,10 +99,15 @@ services:
           echo "[notification] waiting for install.lock and config.json"
           sleep 5
         done
+        if [ -x /app/release/bin/notification ]; then
+          echo "[notification] using release binary /app/release/bin/notification"
+          exec /app/release/bin/notification
+        fi
         exec ./notification
     volumes:
       - ./deploy/runtime:/app/runtime
       - ./deploy/logs:/app/logs
+      - ./deploy/release:/app/release
     depends_on:
       backend:
         condition: service_started
@@ -130,10 +140,15 @@ services:
           echo "[core-control] waiting for install.lock and config.json"
           sleep 5
         done
+        if [ -x /app/release/bin/core-control ]; then
+          echo "[core-control] using release binary /app/release/bin/core-control"
+          exec /app/release/bin/core-control
+        fi
         exec ./core-control
     volumes:
       - ./deploy/runtime:/app/runtime
       - ./deploy/logs:/app/logs
+      - ./deploy/release:/app/release
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       backend:
@@ -153,8 +168,20 @@ services:
       args:
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com/}
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-web
+    command:
+      - /bin/sh
+      - -c
+      - |
+        if [ -f /app/release/web/index.html ]; then
+          echo "[web] syncing release assets from /app/release/web"
+          rm -rf /usr/share/nginx/html/*
+          cp -r /app/release/web/. /usr/share/nginx/html/
+        fi
+        exec nginx -g 'daemon off;'
     ports:
       - "${WEB_PORT:-8080}:80"
+    volumes:
+      - ./deploy/release:/app/release:ro
     depends_on:
       backend:
         condition: service_healthy
