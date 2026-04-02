@@ -35,6 +35,7 @@ export default function DataBoard() {
   const [overview, setOverview] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdatedAt, setLastUpdatedAt] = useState('')
   const [chartModes, setChartModes] = useState(loadChartModes)
   const { showError } = useErrorToast()
 
@@ -48,6 +49,7 @@ export default function DataBoard() {
     try {
       const response = await adminAPI.getBlogDataOverview()
       setOverview(response.data || null)
+      setLastUpdatedAt(new Date().toLocaleTimeString('zh-CN', { hour12: false }))
     } catch (error) {
       showError({
         title: '博客数据加载失败',
@@ -135,15 +137,20 @@ export default function DataBoard() {
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
-          onClick={() => void fetchOverview({ silent: true })}
-          disabled={refreshing}
-        >
-          <RefreshCcw className="mr-2 h-4 w-4" />
-          {refreshing ? '刷新中...' : '刷新数据'}
-        </Button>
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <Button
+            variant="outline"
+            className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
+            onClick={() => void fetchOverview({ silent: true })}
+            disabled={refreshing}
+          >
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            {refreshing ? '刷新中...' : '刷新数据'}
+          </Button>
+          <div className="text-xs text-zinc-400">
+            最近刷新：{lastUpdatedAt || '尚未刷新'}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
