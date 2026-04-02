@@ -79,6 +79,7 @@ export default function ServiceSlotCard({
             className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
             disabled={!snapshot.actions.start || actionLocked}
             onClick={() => onAction(snapshot.id, 'start')}
+            aria-label={`启动服务 ${snapshot.name}`}
           >
             {activeAction === 'start' ? '启动中...' : '启动'}
           </Button>
@@ -88,6 +89,7 @@ export default function ServiceSlotCard({
             className="border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
             disabled={!snapshot.actions.stop || actionLocked}
             onClick={() => onAction(snapshot.id, 'stop')}
+            aria-label={`停止服务 ${snapshot.name}`}
           >
             {activeAction === 'stop' ? '停止中...' : '停止'}
           </Button>
@@ -96,13 +98,14 @@ export default function ServiceSlotCard({
             className="bg-zinc-950 text-white hover:bg-zinc-800"
             disabled={!snapshot.actions.restart || actionLocked}
             onClick={() => onAction(snapshot.id, 'restart')}
+            aria-label={`重启服务 ${snapshot.name}`}
           >
             {activeAction === 'restart' ? '重启中...' : '重启'}
           </Button>
         </div>
 
         {controlLock && (
-          <div className="mt-4 text-xs text-zinc-500">
+          <div className="mt-4 text-xs text-zinc-500" aria-live="polite">
             {activeAction
               ? `当前正在执行 ${activeAction}，其它按钮已锁定。`
               : `当前 ${controlLock.service_id} 正在执行 ${controlLock.action}，全局动作锁生效中。`}
