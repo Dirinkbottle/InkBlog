@@ -6,12 +6,12 @@ import { Calendar, Eye, User, MessageSquare } from 'lucide-react'
 import { formatDate, truncate, generateColor } from '@/lib/utils'
 
 const gradients = [
-  'from-blue-500/80 to-cyan-400/80',
-  'from-purple-500/80 to-pink-400/80',
-  'from-emerald-500/80 to-teal-400/80',
-  'from-orange-500/80 to-amber-400/80',
-  'from-rose-500/80 to-red-400/80',
-  'from-indigo-500/80 to-violet-400/80',
+  'from-sky-400/90 to-cyan-300/90',
+  'from-emerald-400/90 to-teal-300/90',
+  'from-amber-400/90 to-orange-300/90',
+  'from-rose-400/90 to-pink-300/90',
+  'from-indigo-400/90 to-sky-300/90',
+  'from-slate-500/90 to-slate-300/90',
 ]
 
 function getGradient(name) {
@@ -27,7 +27,7 @@ export default function PostCard({ post }) {
   const hasCover = !!post.cover_image
 
   return (
-    <Card className="card-hover h-full flex flex-col group border transition-colors duration-300 hover:border-primary/50">
+    <Card className="card-hover h-full flex flex-col group border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-sky-300 hover:shadow-md">
       <Link to={`/posts/${post.id}`}>
         <div className="relative h-48 overflow-hidden rounded-t-lg">
           {hasCover ? (
@@ -51,14 +51,14 @@ export default function PostCard({ post }) {
         {post.category && (
           <div className="mb-2">
             <Link to={`/posts?category=${post.category.id}`}>
-              <Badge variant="secondary">{post.category.name}</Badge>
+              <Badge variant="secondary" className="bg-sky-100 text-sky-700 hover:bg-sky-200">{post.category.name}</Badge>
             </Link>
           </div>
         )}
-        <CardTitle className="hover:text-primary transition-colors">
+        <CardTitle className="text-slate-900 hover:text-sky-700 transition-colors">
           <Link to={`/posts/${post.id}`}>{post.title}</Link>
         </CardTitle>
-        <CardDescription className="mt-2 line-clamp-2">
+        <CardDescription className="mt-2 line-clamp-2 text-slate-500">
           {truncate(post.summary, 120)}
         </CardDescription>
       </CardHeader>
@@ -77,7 +77,7 @@ export default function PostCard({ post }) {
         )}
       </CardContent>
 
-      <CardFooter className="text-sm text-muted-foreground flex items-center justify-between border-t pt-4">
+      <CardFooter className="text-sm text-slate-500 flex items-center justify-between border-t border-slate-100 pt-4">
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
             <User className="h-3.5 w-3.5 mr-1" />

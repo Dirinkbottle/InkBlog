@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import PostCard from './PostCard'
-import { Skeleton } from '../ui/skeleton'
+import { FileText } from 'lucide-react'
 
 function AnimatedCard({ children, index }) {
   const ref = useRef(null)
@@ -49,11 +49,11 @@ export default function PostList({ posts, isLoading }) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="space-y-4 animate-pulse">
-            <div className="h-48 w-full rounded-lg bg-muted" />
-            <div className="h-4 w-3/4 rounded bg-muted" />
-            <div className="h-4 w-full rounded bg-muted" />
-            <div className="h-4 w-2/3 rounded bg-muted" />
+          <div key={i} className="space-y-4 animate-pulse rounded-xl border border-slate-200 bg-white p-4">
+            <div className="h-40 w-full rounded-lg bg-slate-100" />
+            <div className="h-4 w-3/4 rounded bg-slate-100" />
+            <div className="h-4 w-full rounded bg-slate-100" />
+            <div className="h-4 w-2/3 rounded bg-slate-100" />
           </div>
         ))}
       </div>
@@ -62,8 +62,10 @@ export default function PostList({ posts, isLoading }) {
 
   if (!posts || posts.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">暂无文章</p>
+      <div className="text-center py-14 border border-dashed border-slate-300 rounded-xl bg-white">
+        <FileText className="mx-auto h-8 w-8 text-slate-300 mb-3" />
+        <p className="text-slate-600">暂无文章</p>
+        <p className="text-sm text-slate-400 mt-1">稍后回来看看，或尝试其他筛选条件。</p>
       </div>
     )
   }
