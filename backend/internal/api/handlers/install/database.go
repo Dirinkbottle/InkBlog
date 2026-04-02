@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 	"inkblog-backend/internal/database"
 	"inkblog-backend/pkg/utils"
+	"strings"
 )
 
 // TestDBConnection 测试数据库连接
@@ -28,12 +29,14 @@ func TestDBConnection(c *gin.Context) {
 	var db *gorm.DB
 	var err error
 
-	if req.DBType == "mysql" {
+	dbType := strings.ToLower(strings.TrimSpace(req.DBType))
+
+	if dbType == "mysql" {
 		db, err = database.InitMySQL(req.DBHost, req.DBPort, req.DBUser, req.DBPass, req.DBName)
-	} else if req.DBType == "postgres" {
+	} else if dbType == "postgres" {
 		db, err = database.InitPostgreSQL(req.DBHost, req.DBPort, req.DBUser, req.DBPass, req.DBName)
 	} else {
-		utils.BadRequest(c, "不支持的数据库类型")
+		utils.BadRequest(c, "不支持的数据库类型，仅支持 mysql 或 postgres")
 		return
 	}
 
@@ -45,7 +48,9 @@ func TestDBConnection(c *gin.Context) {
 
 	sqlDB, _ := db.DB()
 	if sqlDB != nil {
-		sqlDB.Close()
+		if closeErr := sqlDB.Close(); closeErr != nil {
+			utils.Warn("Close temporary install DB connection failed: %v", closeErr)
+		}
 	}
 
 	utils.Info("Database connection test successful")
