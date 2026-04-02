@@ -17,6 +17,10 @@ export default defineConfig({
         target: 'http://localhost:13170',
         changeOrigin: true,
       },
+      '/api/v1/deploy': {
+        target: 'http://localhost:13170',
+        changeOrigin: true,
+      },
       '/api/v1/notifications': {
         target: 'http://localhost:13160',
         changeOrigin: true,
