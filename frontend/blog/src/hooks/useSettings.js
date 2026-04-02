@@ -14,5 +14,5 @@ export function useSettings() {
 
 export function useSetting(key, defaultValue = '') {
   const { data: settings = {} } = useSettings()
-  return settings[key] || defaultValue
+  return settings[key] ?? defaultValue
 }
