@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"inkblog-backend/internal/database"
 	"inkblog-backend/internal/model"
@@ -74,6 +76,18 @@ func ChangePassword(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		notification.QueueWarning(c, "修改密码参数错误")
 		utils.BadRequest(c, "请求参数错误: "+err.Error())
+		return
+	}
+	req.OldPassword = strings.TrimSpace(req.OldPassword)
+	req.NewPassword = strings.TrimSpace(req.NewPassword)
+	if req.OldPassword == "" || req.NewPassword == "" {
+		notification.QueueWarning(c, "密码不能为空")
+		utils.BadRequest(c, "密码不能为空")
+		return
+	}
+	if req.OldPassword == req.NewPassword {
+		notification.QueueWarning(c, "新密码不能与旧密码一致")
+		utils.BadRequest(c, "新密码不能与旧密码一致")
 		return
 	}
 
