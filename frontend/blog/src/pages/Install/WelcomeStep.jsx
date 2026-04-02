@@ -10,6 +10,7 @@ export default function WelcomeStep({ onNext }) {
         <p className="mb-6 text-zinc-500">
           这个向导将帮助您完成博客系统的初始化配置
         </p>
+        <p className="mb-6 text-sm text-zinc-400">预计耗时 2-3 分钟，配置完成后会自动初始化系统数据表。</p>
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
             <Database className="mx-auto mb-2 h-8 w-8 text-zinc-700" />
