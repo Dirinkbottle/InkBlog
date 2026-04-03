@@ -15,7 +15,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     env:
       DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
       DEPLOY_PUSH_TOKEN: ${{ secrets.DEPLOY_PUSH_TOKEN }}
@@ -70,6 +70,21 @@ jobs:
             release/web_bundle.tar.gz.sha256
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish Bundles To GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: deploy-latest
+          name: Deploy Latest
+          body: |
+            Auto-updated by CI.
+            commit: ${{ github.sha }}
+          files: |
+            release/backend_bundle.tar.gz
+            release/backend_bundle.tar.gz.sha256
+            release/web_bundle.tar.gz
+            release/web_bundle.tar.gz.sha256
+          overwrite_files: true
 
       - name: Push Bundles To Server
         if: >-

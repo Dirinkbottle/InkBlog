@@ -79,7 +79,6 @@ usage() {
   bash scripts/docker-compose-deploy.sh up
   bash scripts/docker-compose-deploy.sh down
   bash scripts/docker-compose-deploy.sh restart
-  bash scripts/docker-compose-deploy.sh build
   bash scripts/docker-compose-deploy.sh logs [service]
   bash scripts/docker-compose-deploy.sh ps
   bash scripts/docker-compose-deploy.sh pull
@@ -87,7 +86,7 @@ usage() {
 
 说明:
   init    仅初始化 .env.compose 和 deploy/ 目录
-  up      后台启动整套服务并自动 build
+  up      后台启动整套服务（启动前自动从 GitHub Release 拉取构建产物）
   logs    默认跟随全部日志，也可指定 service 名称
 EOF
 }
@@ -107,7 +106,7 @@ case "${command}" in
     ensure_env_file
     ensure_runtime_dirs
     prepare_up
-    compose up -d --build
+    compose up -d
     print_install_hint
     ;;
   down)
@@ -118,12 +117,7 @@ case "${command}" in
     ensure_env_file
     ensure_runtime_dirs
     compose down
-    compose up -d --build
-    ;;
-  build)
-    ensure_env_file
-    ensure_runtime_dirs
-    compose build
+    compose up -d
     ;;
   pull)
     ensure_env_file

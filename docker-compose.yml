@@ -38,10 +38,30 @@ services:
       retries: 10
     restart: unless-stopped
 
+  release-sync:
+    image: docker.1ms.run/alpine:3.20
+    container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-release-sync
+    environment:
+      GH_RELEASE_REPO: ${GH_RELEASE_REPO}
+      GH_RELEASE_TAG: ${GH_RELEASE_TAG:-deploy-latest}
+      GH_RELEASE_TOKEN: ${GH_RELEASE_TOKEN:-}
+      GH_RELEASE_BACKEND_ASSET: ${GH_RELEASE_BACKEND_ASSET:-backend_bundle.tar.gz}
+      GH_RELEASE_BACKEND_SHA_ASSET: ${GH_RELEASE_BACKEND_SHA_ASSET:-backend_bundle.tar.gz.sha256}
+      GH_RELEASE_WEB_ASSET: ${GH_RELEASE_WEB_ASSET:-web_bundle.tar.gz}
+      GH_RELEASE_WEB_SHA_ASSET: ${GH_RELEASE_WEB_SHA_ASSET:-web_bundle.tar.gz.sha256}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache curl jq tar coreutils >/dev/null
+        /opt/github-release-sync.sh
+    volumes:
+      - ./deploy/release:/release
+      - ./scripts/github-release-sync.sh:/opt/github-release-sync.sh:ro
+    restart: "no"
+
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: docker.1ms.run/alpine:3.20
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-backend
     environment:
       TZ: ${TZ:-Asia/Shanghai}
@@ -54,17 +74,19 @@ services:
         mkdir -p /app/runtime /app/uploads /app/logs
         ln -sf /app/runtime/config.json /app/config.json
         ln -sf /app/runtime/install.lock /app/install.lock
-        if [ -x /app/release/bin/main ]; then
-          echo "[backend] using release binary /app/release/bin/main"
-          exec /app/release/bin/main
+        if [ ! -x /app/release/bin/main ]; then
+          echo "[backend] missing release binary /app/release/bin/main"
+          exit 1
         fi
-        exec ./main
+        exec /app/release/bin/main
     volumes:
       - ./deploy/runtime:/app/runtime
       - ./deploy/uploads:/app/uploads
       - ./deploy/logs:/app/logs
       - ./deploy/release:/app/release
     depends_on:
+      release-sync:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -78,9 +100,7 @@ services:
     restart: unless-stopped
 
   notification:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: docker.1ms.run/alpine:3.20
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-notification
     environment:
       TZ: ${TZ:-Asia/Shanghai}
@@ -99,16 +119,18 @@ services:
           echo "[notification] waiting for install.lock and config.json"
           sleep 5
         done
-        if [ -x /app/release/bin/notification ]; then
-          echo "[notification] using release binary /app/release/bin/notification"
-          exec /app/release/bin/notification
+        if [ ! -x /app/release/bin/notification ]; then
+          echo "[notification] missing release binary /app/release/bin/notification"
+          exit 1
         fi
-        exec ./notification
+        exec /app/release/bin/notification
     volumes:
       - ./deploy/runtime:/app/runtime
       - ./deploy/logs:/app/logs
       - ./deploy/release:/app/release
     depends_on:
+      release-sync:
+        condition: service_completed_successfully
       backend:
         condition: service_started
     healthcheck:
@@ -120,9 +142,7 @@ services:
     restart: unless-stopped
 
   core-control:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: docker.1ms.run/alpine:3.20
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-core-control
     environment:
       TZ: ${TZ:-Asia/Shanghai}
@@ -142,17 +162,19 @@ services:
           echo "[core-control] waiting for install.lock and config.json"
           sleep 5
         done
-        if [ -x /app/release/bin/core-control ]; then
-          echo "[core-control] using release binary /app/release/bin/core-control"
-          exec /app/release/bin/core-control
+        if [ ! -x /app/release/bin/core-control ]; then
+          echo "[core-control] missing release binary /app/release/bin/core-control"
+          exit 1
         fi
-        exec ./core-control
+        exec /app/release/bin/core-control
     volumes:
       - ./deploy/runtime:/app/runtime
       - ./deploy/logs:/app/logs
       - ./deploy/release:/app/release
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
+      release-sync:
+        condition: service_completed_successfully
       backend:
         condition: service_started
     healthcheck:
@@ -164,27 +186,27 @@ services:
     restart: unless-stopped
 
   web:
-    build:
-      context: ./frontend/blog
-      dockerfile: Dockerfile
-      args:
-        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com/}
+    image: docker.1ms.run/nginx:1.27-alpine
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-web
     command:
       - /bin/sh
       - -c
       - |
-        if [ -f /app/release/web/index.html ]; then
-          echo "[web] syncing release assets from /app/release/web"
-          rm -rf /usr/share/nginx/html/*
-          cp -r /app/release/web/. /usr/share/nginx/html/
+        if [ ! -f /app/release/web/index.html ]; then
+          echo "[web] missing frontend release assets in /app/release/web"
+          exit 1
         fi
+        echo "[web] syncing release assets from /app/release/web"
+        rm -rf /usr/share/nginx/html/*
+        cp -r /app/release/web/. /usr/share/nginx/html/
         exec nginx -g 'daemon off;'
     ports:
       - "${WEB_PORT:-8080}:80"
     volumes:
       - ./deploy/release:/app/release:ro
     depends_on:
+      release-sync:
+        condition: service_completed_successfully
       backend:
         condition: service_healthy
       notification:
