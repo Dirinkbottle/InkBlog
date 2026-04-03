@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: docker.1ms.run/mysql:8.4
+    image: ${MYSQL_IMAGE:-mysql:8.4}
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-mysql
     command:
       - --character-set-server=utf8mb4
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: docker.1ms.run/redis:7-alpine
+    image: ${REDIS_IMAGE:-redis:7-alpine}
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-redis
     command: ["redis-server", "--appendonly", "yes"]
     ports:
@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   release-sync:
-    image: docker.1ms.run/alpine:3.20
+    image: ${RUNTIME_IMAGE:-alpine:3.20}
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-release-sync
     environment:
       GH_RELEASE_REPO: ${GH_RELEASE_REPO}
@@ -61,7 +61,7 @@ services:
     restart: "no"
 
   backend:
-    image: docker.1ms.run/alpine:3.20
+    image: ${RUNTIME_IMAGE:-alpine:3.20}
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-backend
     environment:
       TZ: ${TZ:-Asia/Shanghai}
@@ -100,7 +100,7 @@ services:
     restart: unless-stopped
 
   notification:
-    image: docker.1ms.run/alpine:3.20
+    image: ${RUNTIME_IMAGE:-alpine:3.20}
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-notification
     environment:
       TZ: ${TZ:-Asia/Shanghai}
@@ -142,7 +142,7 @@ services:
     restart: unless-stopped
 
   core-control:
-    image: docker.1ms.run/alpine:3.20
+    image: ${RUNTIME_IMAGE:-alpine:3.20}
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-core-control
     environment:
       TZ: ${TZ:-Asia/Shanghai}
@@ -186,7 +186,7 @@ services:
     restart: unless-stopped
 
   web:
-    image: docker.1ms.run/nginx:1.27-alpine
+    image: ${WEB_IMAGE:-nginx:1.27-alpine}
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-web
     command:
       - /bin/sh
