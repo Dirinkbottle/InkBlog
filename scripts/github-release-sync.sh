@@ -70,6 +70,16 @@ GH_RELEASE_WEB_SHA_ASSET="${GH_RELEASE_WEB_SHA_ASSET:-web_bundle.tar.gz.sha256}"
 
 require_var "GH_RELEASE_REPO" "$GH_RELEASE_REPO"
 
+if printf '%s' "$GH_RELEASE_REPO" | grep -Eq '^https?://'; then
+  GH_RELEASE_REPO="$(printf '%s' "$GH_RELEASE_REPO" | sed -E 's#^https?://github.com/##; s#/$##; s#\.git$##')"
+fi
+
+if ! printf '%s' "$GH_RELEASE_REPO" | grep -Eq '^[^/]+/[^/]+$'; then
+  echo "[release-sync] invalid GH_RELEASE_REPO format: ${GH_RELEASE_REPO}" >&2
+  echo "[release-sync] expected: owner/repo (example: Dirinkbottle/InkBlog)" >&2
+  exit 1
+fi
+
 if [ "$GH_RELEASE_TAG" = "latest" ]; then
   RELEASE_API_URL="https://api.github.com/repos/${GH_RELEASE_REPO}/releases/latest"
 else
