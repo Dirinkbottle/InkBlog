@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+      DEPLOY_PUSH_TOKEN: ${{ secrets.DEPLOY_PUSH_TOKEN }}
 
     steps:
       - name: Checkout
@@ -71,13 +74,11 @@ jobs:
       - name: Push Bundles To Server
         if: >-
           ${{
-            secrets.DEPLOY_WEBHOOK_URL != '' &&
-            secrets.DEPLOY_PUSH_TOKEN != '' &&
+            env.DEPLOY_WEBHOOK_URL != '' &&
+            env.DEPLOY_PUSH_TOKEN != '' &&
             (github.event_name == 'push' || github.event.inputs.push_to_server != 'false')
           }}
         env:
-          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
-          DEPLOY_PUSH_TOKEN: ${{ secrets.DEPLOY_PUSH_TOKEN }}
           VERSION_TAG: ${{ github.sha }}
         run: |
           curl -fS --retry 3 --retry-all-errors \
