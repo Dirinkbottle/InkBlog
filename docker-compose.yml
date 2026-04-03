@@ -46,6 +46,7 @@ services:
       GH_RELEASE_TAG: ${GH_RELEASE_TAG:-deploy-latest}
       GH_RELEASE_TOKEN: ${GH_RELEASE_TOKEN:-}
       GH_RELEASE_PROXY_PREFIX: ${GH_RELEASE_PROXY_PREFIX:-}
+      GH_RELEASE_DOWNLOAD_BASE: ${GH_RELEASE_DOWNLOAD_BASE:-}
       GH_RELEASE_BACKEND_ASSET: ${GH_RELEASE_BACKEND_ASSET:-backend_bundle.tar.gz}
       GH_RELEASE_BACKEND_SHA_ASSET: ${GH_RELEASE_BACKEND_SHA_ASSET:-backend_bundle.tar.gz.sha256}
       GH_RELEASE_WEB_ASSET: ${GH_RELEASE_WEB_ASSET:-web_bundle.tar.gz}
@@ -58,7 +59,7 @@ services:
         if [ -n "${APK_REPO_URL}" ]; then
           echo "${APK_REPO_URL}" > /etc/apk/repositories
         fi
-        apk add --no-cache curl jq tar coreutils >/dev/null
+        apk add --no-cache curl tar coreutils >/dev/null
         /opt/github-release-sync.sh
     volumes:
       - ./deploy/release:/release

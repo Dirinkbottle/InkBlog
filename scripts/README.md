@@ -8,6 +8,7 @@
   - `REDIS_IMAGE`
   - `RUNTIME_IMAGE`
   - `WEB_IMAGE`
+- Release 下载默认使用直链 `github.com/<repo>/releases/download/<tag>/<asset>`，可通过 `GH_RELEASE_PROXY_PREFIX`/`GH_RELEASE_DOWNLOAD_BASE` 调整。
 - 宿主机仍保留这些目录：
   - `deploy/runtime`
   - `deploy/uploads`
