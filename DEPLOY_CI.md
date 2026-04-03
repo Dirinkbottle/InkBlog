@@ -30,6 +30,8 @@ DEPLOY_RELEASE_ROOT=/app/release
 GH_RELEASE_REPO=your-org-or-user/InkBlog
 GH_RELEASE_TAG=deploy-latest
 GH_RELEASE_TOKEN= # 私有仓库必填，公开仓库可留空
+GH_RELEASE_PROXY_PREFIX= # 可选，如 https://ghproxy.com
+APK_REPO_URL= # 可选，如 https://mirrors.aliyun.com/alpine/v3.20/main
 ```
 
 然后重启容器：
@@ -59,6 +61,11 @@ docker compose up -d
 
 - `deploy/release/bin`
 - `deploy/release/web`
+
+### 下载加速（可选）
+
+- `GH_RELEASE_PROXY_PREFIX`：给 GitHub API/资产下载加代理前缀（公开仓库推荐）
+- `APK_REPO_URL`：给 `release-sync` 容器安装依赖时切换 APK 镜像源
 
 ## 工作流
 

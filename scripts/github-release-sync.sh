@@ -17,6 +17,12 @@ require_var() {
 
 curl_json() {
   url="$1"
+  if [ -n "${GH_RELEASE_PROXY_PREFIX:-}" ] && [ -z "${GH_RELEASE_TOKEN:-}" ]; then
+    case "$GH_RELEASE_PROXY_PREFIX" in
+      */) url="${GH_RELEASE_PROXY_PREFIX}${url}" ;;
+      *) url="${GH_RELEASE_PROXY_PREFIX}/${url}" ;;
+    esac
+  fi
   if [ -n "${GH_RELEASE_TOKEN:-}" ]; then
     curl -fsSL -H "Authorization: Bearer ${GH_RELEASE_TOKEN}" "$url"
   else
@@ -30,6 +36,7 @@ download_asset() {
   target_path="$3"
 
   asset_api_url="$(jq -r --arg name "$asset_name" '.assets[] | select(.name == $name) | .url' "$release_json_path" | head -n 1)"
+  asset_browser_url="$(jq -r --arg name "$asset_name" '.assets[] | select(.name == $name) | .browser_download_url' "$release_json_path" | head -n 1)"
   if [ -z "$asset_api_url" ] || [ "$asset_api_url" = "null" ]; then
     echo "[release-sync] asset not found in release: ${asset_name}" >&2
     exit 1
@@ -42,9 +49,18 @@ download_asset() {
       "$asset_api_url" \
       -o "$target_path"
   else
+    if [ -z "$asset_browser_url" ] || [ "$asset_browser_url" = "null" ]; then
+      asset_browser_url="$asset_api_url"
+    fi
+    download_url="$asset_browser_url"
+    if [ -n "${GH_RELEASE_PROXY_PREFIX:-}" ]; then
+      case "$GH_RELEASE_PROXY_PREFIX" in
+        */) download_url="${GH_RELEASE_PROXY_PREFIX}${download_url}" ;;
+        *) download_url="${GH_RELEASE_PROXY_PREFIX}/${download_url}" ;;
+      esac
+    fi
     curl -fsSL \
-      -H "Accept: application/octet-stream" \
-      "$asset_api_url" \
+      "$download_url" \
       -o "$target_path"
   fi
 }
@@ -63,6 +79,7 @@ verify_sha256() {
 
 GH_RELEASE_REPO="${GH_RELEASE_REPO:-}"
 GH_RELEASE_TAG="${GH_RELEASE_TAG:-deploy-latest}"
+GH_RELEASE_PROXY_PREFIX="${GH_RELEASE_PROXY_PREFIX:-}"
 GH_RELEASE_BACKEND_ASSET="${GH_RELEASE_BACKEND_ASSET:-backend_bundle.tar.gz}"
 GH_RELEASE_BACKEND_SHA_ASSET="${GH_RELEASE_BACKEND_SHA_ASSET:-backend_bundle.tar.gz.sha256}"
 GH_RELEASE_WEB_ASSET="${GH_RELEASE_WEB_ASSET:-web_bundle.tar.gz}"
