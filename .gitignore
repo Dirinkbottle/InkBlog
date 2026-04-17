@@ -4,3 +4,4 @@ logs/
 deploy/
 */node_modules/
 .env.compose
+.gitnexus
