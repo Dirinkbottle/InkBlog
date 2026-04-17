@@ -33,7 +33,8 @@ ensure_runtime_dirs() {
   mkdir -p \
     "${ROOT_DIR}/deploy/runtime" \
     "${ROOT_DIR}/deploy/uploads" \
-    "${ROOT_DIR}/deploy/logs"
+    "${ROOT_DIR}/deploy/logs" \
+    "${ROOT_DIR}/github-release"
 }
 
 compose() {

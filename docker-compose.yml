@@ -42,11 +42,13 @@ services:
     image: alpine:3.20
     container_name: ${COMPOSE_PROJECT_NAME:-inkblog}-release-sync
     environment:
-      GH_RELEASE_REPO: ${GH_RELEASE_REPO}
+      GH_RELEASE_REPO: ${GH_RELEASE_REPO:-}
       GH_RELEASE_TAG: ${GH_RELEASE_TAG:-deploy-latest}
       GH_RELEASE_TOKEN: ${GH_RELEASE_TOKEN:-}
       GH_RELEASE_PROXY_PREFIX: ${GH_RELEASE_PROXY_PREFIX:-https://gh-proxy.org}
       GH_RELEASE_DOWNLOAD_BASE: ${GH_RELEASE_DOWNLOAD_BASE:-}
+      GH_RELEASE_CACHE_DIR: /github-release
+      GH_RELEASE_EXTRACT_DIR: /release
       GH_RELEASE_BACKEND_ASSET: ${GH_RELEASE_BACKEND_ASSET:-backend_bundle.tar.gz}
       GH_RELEASE_BACKEND_SHA_ASSET: ${GH_RELEASE_BACKEND_SHA_ASSET:-backend_bundle.tar.gz.sha256}
       GH_RELEASE_WEB_ASSET: ${GH_RELEASE_WEB_ASSET:-web_bundle.tar.gz}
@@ -55,14 +57,10 @@ services:
     command:
       - /bin/sh
       - -c
-      - |
-        if [ -n "${APK_REPO_URL}" ]; then
-          echo "${APK_REPO_URL}" > /etc/apk/repositories
-        fi
-        apk add --no-cache curl tar coreutils >/dev/null
-        /opt/github-release-sync.sh
+      - /opt/github-release-sync.sh
     volumes:
       - ./deploy/release:/release
+      - ./github-release:/github-release
       - ./scripts/github-release-sync.sh:/opt/github-release-sync.sh:ro
     restart: "no"
 
@@ -77,6 +75,7 @@ services:
       - /bin/sh
       - -c
       - |
+        cd /app
         mkdir -p /app/runtime /app/uploads /app/logs
         ln -sf /app/runtime/config.json /app/config.json
         ln -sf /app/runtime/install.lock /app/install.lock
@@ -118,6 +117,7 @@ services:
       - /bin/sh
       - -c
       - |
+        cd /app
         mkdir -p /app/runtime /app/logs
         ln -sf /app/runtime/config.json /app/config.json
         ln -sf /app/runtime/install.lock /app/install.lock
@@ -161,6 +161,7 @@ services:
       - /bin/sh
       - -c
       - |
+        cd /app
         mkdir -p /app/runtime /app/logs
         ln -sf /app/runtime/config.json /app/config.json
         ln -sf /app/runtime/install.lock /app/install.lock
@@ -210,6 +211,7 @@ services:
       - "${WEB_PORT:-8080}:80"
     volumes:
       - ./deploy/release:/app/release:ro
+      - ./frontend/blog/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       release-sync:
         condition: service_completed_successfully
@@ -220,7 +222,7 @@ services:
       core-control:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

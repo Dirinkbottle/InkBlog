@@ -20,7 +20,7 @@
 - 后端包：`backend`、`notification`
 - 前端包：`web`
 
-## 服务器配置（Docker 启动时从 GitHub 拉取）
+## 服务器配置（Docker 启动时本地缓存优先）
 
 在 `.env.compose` 中至少配置：
 
@@ -58,7 +58,11 @@ docker compose up -d
 - `web_bundle.tar.gz`
 - `web_bundle.tar.gz.sha256`
 
-`release-sync` 容器会在每次 `docker compose up` 时先下载这 4 个文件，再解压到：
+`release-sync` 容器会在每次 `docker compose up` 时按以下顺序处理：
+
+1. 优先读取宿主机 `github-release/` 目录中的 4 个资产
+2. 如资产缺失，再从 GitHub Release 下载到 `github-release/`
+3. 校验 sha256 后解压到：
 
 - `deploy/release/bin`
 - `deploy/release/web`
