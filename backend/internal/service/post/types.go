@@ -23,6 +23,9 @@ type UpdatePostRequest struct {
 }
 
 type PostQuery struct {
+	Sort       string `form:"sort"`
+	Year       int    `form:"year" binding:"omitempty,min=1970,max=9998"`
+	Month      int    `form:"month" binding:"omitempty,min=1,max=12"`
 	Page       int    `form:"page,default=1"`
 	PageSize   int    `form:"page_size,default=10"`
 	CategoryID string `form:"category_id"`

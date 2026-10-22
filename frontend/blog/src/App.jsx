@@ -1,35 +1,43 @@
-import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+} from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import axios from 'axios'
 import Header from './components/layout/Header'
 import Footer from './components/layout/Footer'
-import Welcome from './pages/Welcome'
-import Posts from './pages/Posts'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import PostDetailPage from './pages/PostDetailPage'
-import Install from './pages/Install'
-import UserSettings from './pages/UserSettings'
-import Search from './pages/Search'
-import NotFound from './pages/NotFound'
-import VerifyEmailWaiting from './pages/VerifyEmailWaiting'
-import VerifyEmailSuccess from './pages/VerifyEmailSuccess'
-import UserProfile from './pages/UserProfile/index'
-import AdminLayout from './components/admin/AdminLayout'
-import Dashboard from './pages/admin/Dashboard'
-import DataBoard from './pages/admin/DataBoard'
-import PostManage from './pages/admin/PostManage'
-import PostEdit from './pages/admin/PostEdit'
-import CategoryManage from './pages/admin/CategoryManage'
-import TagManage from './pages/admin/TagManage'
-import UserManage from './pages/admin/UserManage'
-import CommentManage from './pages/admin/CommentManage'
-import SiteSettings from './pages/admin/SiteSettings'
-import ServiceManagement from './pages/admin/ServiceManagement'
-import UserLayout from './components/user/UserLayout'
-import UserPostManage from './pages/user/UserPostManage'
-import UserPostEdit from './pages/user/UserPostEdit'
+const Welcome = lazy(() => import('./pages/Welcome'))
+const Archives = lazy(() => import('./pages/Archives'))
+const Library = lazy(() => import('./pages/Library'))
+import RouteScroll from './components/layout/RouteScroll'
+const Posts = lazy(() => import('./pages/Posts'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const PostDetailPage = lazy(() => import('./pages/PostDetailPage'))
+const Install = lazy(() => import('./pages/Install'))
+const UserSettings = lazy(() => import('./pages/UserSettings'))
+const Search = lazy(() => import('./pages/Search'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const VerifyEmailWaiting = lazy(() => import('./pages/VerifyEmailWaiting'))
+const VerifyEmailSuccess = lazy(() => import('./pages/VerifyEmailSuccess'))
+const UserProfile = lazy(() => import('./pages/UserProfile/index'))
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'))
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'))
+const DataBoard = lazy(() => import('./pages/admin/DataBoard'))
+const PostManage = lazy(() => import('./pages/admin/PostManage'))
+const PostEdit = lazy(() => import('./pages/admin/PostEdit'))
+const CategoryManage = lazy(() => import('./pages/admin/CategoryManage'))
+const TagManage = lazy(() => import('./pages/admin/TagManage'))
+const UserManage = lazy(() => import('./pages/admin/UserManage'))
+const CommentManage = lazy(() => import('./pages/admin/CommentManage'))
+const SiteSettings = lazy(() => import('./pages/admin/SiteSettings'))
+const ServiceManagement = lazy(() => import('./pages/admin/ServiceManagement'))
+const UserLayout = lazy(() => import('./components/user/UserLayout'))
+const UserPostManage = lazy(() => import('./pages/user/UserPostManage'))
+const UserPostEdit = lazy(() => import('./pages/user/UserPostEdit'))
 import { Toaster } from './components/ui/sonner'
 import ScrollToTop from './components/ui/scroll-to-top'
 import ErrorBoundary from './components/error/ErrorBoundary'
@@ -55,8 +63,9 @@ function InstallChecker({ children }) {
   const navigate = useNavigate()
 
   useEffect(() => {
-    axios.get('/api/v1/install/status')
-      .then(res => {
+    axios
+      .get('/api/v1/install/status')
+      .then((res) => {
         const installed = res.data?.data?.installed || false
         setIsInstalled(installed)
         if (!installed && window.location.pathname !== '/install') {
@@ -85,14 +94,6 @@ function InstallChecker({ children }) {
   return <NotificationProvider>{children}</NotificationProvider>
 }
 
-// Welcome 路由守卫：已访问过则直接跳转 /posts
-function WelcomeGuard() {
-  if (sessionStorage.getItem('inkblog_visited')) {
-    return <Navigate to="/posts" replace />
-  }
-  return <Welcome />
-}
-
 function App() {
   useEffect(() => {
     setupGlobalErrorHandler()
@@ -103,61 +104,96 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <Router>
+          <RouteScroll />
           <InstallChecker>
-            <Routes>
-          {/* 欢迎页（无 Header/Footer） */}
-          <Route path="/" element={<WelcomeGuard />} />
+            <Suspense
+              fallback={
+                <div className="site-width page-space" role="status">
+                  正在打开页面…
+                </div>
+              }
+            >
+              <Routes>
+                {/* 公共路由 */}
+                <Route path="/install" element={<Install />} />
+                <Route path="/settings" element={<UserSettings />} />
+                <Route
+                  path="/*"
+                  element={
+                    <div className="flex flex-col min-h-screen">
+                      <Header />
+                      <main id="main-content" className="flex-1" tabIndex={-1}>
+                        <Suspense
+                          fallback={
+                            <div
+                              className="site-width page-space"
+                              role="status"
+                            >
+                              正在打开页面…
+                            </div>
+                          }
+                        >
+                          <Routes>
+                            <Route path="/" element={<Welcome />} />
+                            <Route path="/archives" element={<Archives />} />
+                            <Route path="/library" element={<Library />} />
+                            <Route path="/posts" element={<Posts />} />
+                            <Route
+                              path="/posts/:id"
+                              element={<PostDetailPage />}
+                            />
+                            <Route
+                              path="/users/:id"
+                              element={<UserProfile />}
+                            />
+                            <Route path="/search" element={<Search />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route
+                              path="/verify-email-waiting"
+                              element={<VerifyEmailWaiting />}
+                            />
+                            <Route
+                              path="/verify-email"
+                              element={<VerifyEmailSuccess />}
+                            />
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </Suspense>
+                      </main>
+                      <Footer />
+                      <ScrollToTop />
+                    </div>
+                  }
+                />
 
-          {/* 公共路由 */}
-          <Route path="/install" element={<Install />} />
-          <Route path="/settings" element={<UserSettings />} />
-          <Route
-            path="/*"
-            element={
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-1">
-                  <Routes>
-                    <Route path="/posts" element={<Posts />} />
-                    <Route path="/posts/:id" element={<PostDetailPage />} />
-                    <Route path="/users/:id" element={<UserProfile />} />
-                    <Route path="/search" element={<Search />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/verify-email-waiting" element={<VerifyEmailWaiting />} />
-                    <Route path="/verify-email" element={<VerifyEmailSuccess />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </main>
-                <Footer />
-                <ScrollToTop />
-              </div>
-            }
-          />
+                {/* 用户路由 */}
+                <Route path="/user" element={<UserLayout />}>
+                  <Route index element={<UserPostManage />} />
+                  <Route path="posts" element={<UserPostManage />} />
+                  <Route path="posts/new" element={<UserPostEdit />} />
+                  <Route path="posts/:id/edit" element={<UserPostEdit />} />
+                </Route>
 
-          {/* 用户路由 */}
-          <Route path="/user" element={<UserLayout />}>
-            <Route index element={<UserPostManage />} />
-            <Route path="posts" element={<UserPostManage />} />
-            <Route path="posts/new" element={<UserPostEdit />} />
-            <Route path="posts/:id/edit" element={<UserPostEdit />} />
-          </Route>
-
-          {/* 管理员路由 */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="databoard" element={<DataBoard />} />
-            <Route path="services/:serviceId" element={<ServiceManagement />} />
-            <Route path="posts" element={<PostManage />} />
-            <Route path="posts/new" element={<PostEdit />} />
-            <Route path="posts/:id/edit" element={<PostEdit />} />
-            <Route path="categories" element={<CategoryManage />} />
-            <Route path="tags" element={<TagManage />} />
-            <Route path="users" element={<UserManage />} />
-            <Route path="comments" element={<CommentManage />} />
-            <Route path="settings" element={<SiteSettings />} />
-          </Route>
-            </Routes>
+                {/* 管理员路由 */}
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="databoard" element={<DataBoard />} />
+                  <Route
+                    path="services/:serviceId"
+                    element={<ServiceManagement />}
+                  />
+                  <Route path="posts" element={<PostManage />} />
+                  <Route path="posts/new" element={<PostEdit />} />
+                  <Route path="posts/:id/edit" element={<PostEdit />} />
+                  <Route path="categories" element={<CategoryManage />} />
+                  <Route path="tags" element={<TagManage />} />
+                  <Route path="users" element={<UserManage />} />
+                  <Route path="comments" element={<CommentManage />} />
+                  <Route path="settings" element={<SiteSettings />} />
+                </Route>
+              </Routes>
+            </Suspense>
             <Toaster />
             <ErrorToastContainer />
             <SuccessToastContainer />

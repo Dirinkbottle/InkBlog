@@ -8,22 +8,27 @@ import PostHeader from './PostHeader'
 import PostContent from './PostContent'
 
 export default function PostDetail({ post }) {
-  const { theme } = useThemeStore()
+  const { resolvedTheme: theme } = useThemeStore()
   const { user, isAuthenticated } = useAuthStore()
-  
-  const canEdit = isAuthenticated && (
-    user?.role === 'admin' || 
-    (user?.permissions?.can_edit_post && user?.id === post.author_id) ||
-    user?.id === post.author_id
-  )
+
+  const canEdit =
+    isAuthenticated &&
+    (user?.role === 'admin' ||
+      (user?.permissions?.can_edit_post &&
+        user?.id === (post.author_id ?? post.author?.id)) ||
+      user?.id === (post.author_id ?? post.author?.id))
 
   return (
     <article className="max-w-4xl mx-auto">
       <header className="mb-8">
         <div className="flex items-start justify-between mb-4">
-          <h1 className="text-4xl md:text-5xl font-bold leading-tight flex-1">{post.title}</h1>
+          <h1 className="text-4xl md:text-5xl font-bold leading-tight flex-1">
+            {post.title}
+          </h1>
           {canEdit && (
-            <Link to={`/admin/posts/${post.id}/edit`}>
+            <Link
+              to={`/${user?.role === 'admin' ? 'admin' : 'user'}/posts/${post.id}/edit`}
+            >
               <Button variant="outline" size="sm" className="ml-4">
                 <Edit className="h-4 w-4 mr-2" />
                 编辑
@@ -33,11 +38,16 @@ export default function PostDetail({ post }) {
         </div>
 
         <PostHeader post={post} />
+        {post.summary && <p className="post-detail-summary">{post.summary}</p>}
       </header>
 
       {post.cover_image && (
         <div className="mb-8 rounded-lg overflow-hidden">
-          <img src={post.cover_image} alt={post.title} className="w-full h-auto" />
+          <img
+            src={post.cover_image}
+            alt={post.title}
+            className="w-full h-auto"
+          />
         </div>
       )}
 

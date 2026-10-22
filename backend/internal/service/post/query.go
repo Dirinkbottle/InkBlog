@@ -23,23 +23,23 @@ func GetPostList(query PostQuery) (*PostListResult, error) {
 		Preload("Tags")
 
 	if query.Status != "" {
-		queryBuilder = queryBuilder.Where("status = ?", query.Status)
+		queryBuilder = queryBuilder.Where("posts.status = ?", query.Status)
 		fmt.Printf("[PostService] Filter by status: %s\n", query.Status)
 	}
 
 	if query.AuthorID > 0 {
-		queryBuilder = queryBuilder.Where("author_id = ?", query.AuthorID)
+		queryBuilder = queryBuilder.Where("posts.author_id = ?", query.AuthorID)
 		fmt.Printf("[PostService] Filter by author ID: %d\n", query.AuthorID)
 	}
 
 	if query.CategoryID != "" {
 		if categoryID, err := strconv.ParseUint(query.CategoryID, 10, 32); err == nil && categoryID > 0 {
-			queryBuilder = queryBuilder.Where("category_id = ?", categoryID)
+			queryBuilder = queryBuilder.Where("posts.category_id = ?", categoryID)
 			fmt.Printf("[PostService] Filter by category ID: %d\n", categoryID)
 		} else {
 			var category model.Category
 			if err := db.Where("slug = ?", query.CategoryID).First(&category).Error; err == nil {
-				queryBuilder = queryBuilder.Where("category_id = ?", category.ID)
+				queryBuilder = queryBuilder.Where("posts.category_id = ?", category.ID)
 				fmt.Printf("[PostService] Filter by category slug '%s' (resolved to ID: %d)\n", query.CategoryID, category.ID)
 			} else {
 				fmt.Printf("[PostService] Warning: Category slug '%s' not found\n", query.CategoryID)
@@ -68,9 +68,11 @@ func GetPostList(query PostQuery) (*PostListResult, error) {
 
 	if query.Search != "" {
 		searchTerm := "%" + query.Search + "%"
-		queryBuilder = queryBuilder.Where("title LIKE ? OR content LIKE ?", searchTerm, searchTerm)
+		queryBuilder = queryBuilder.Where("(posts.title LIKE ? OR posts.content LIKE ? OR posts.summary LIKE ?)", searchTerm, searchTerm, searchTerm)
 		fmt.Printf("[PostService] Filter by search term: %s\n", query.Search)
 	}
+
+	queryBuilder = applyPublicationWindow(queryBuilder, query)
 
 	var total int64
 	if err := queryBuilder.Count(&total).Error; err != nil {
@@ -90,7 +92,7 @@ func GetPostList(query PostQuery) (*PostListResult, error) {
 
 	var posts []model.Post
 	if err := queryBuilder.
-		Order("created_at DESC").
+		Order(postListOrder(query.Sort)).
 		Limit(query.PageSize).
 		Offset(offset).
 		Find(&posts).Error; err != nil {

@@ -1,73 +1,84 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+
+function resolveTheme(theme) {
+  return theme === 'system'
+    ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+    : theme === 'dark'
+      ? 'dark'
+      : 'light'
+}
+
+function applyTheme(theme) {
+  const resolvedTheme = resolveTheme(theme)
+  const root = window.document.documentElement
+  root.classList.remove('light', 'dark')
+  root.classList.add(resolvedTheme)
+  root.style.colorScheme = resolvedTheme
+  return resolvedTheme
+}
 
 const useThemeStore = create(
   persist(
-    (set) => ({
-      theme: 'light', // 'light' | 'dark' | 'system'
-
+    (set, get) => ({
+      theme: 'light',
+      resolvedTheme: 'light',
       setTheme: (theme) => {
-        // 更新 HTML 类名
-        const root = window.document.documentElement
-        root.classList.remove('light', 'dark')
-
-        if (theme === 'system') {
-          const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : 'light'
-          root.classList.add(systemTheme)
-        } else {
-          root.classList.add(theme)
-        }
-
-        set({ theme })
+        const preference = ['light', 'dark', 'system'].includes(theme)
+          ? theme
+          : 'light'
+        set({ theme: preference, resolvedTheme: applyTheme(preference) })
       },
-
       toggleTheme: () => {
-        set((state) => {
-          const newTheme = state.theme === 'light' ? 'dark' : 'light'
-          const root = window.document.documentElement
-          root.classList.remove('light', 'dark')
-          root.classList.add(newTheme)
-          return { theme: newTheme }
-        })
+        const next = resolveTheme(get().theme) === 'dark' ? 'light' : 'dark'
+        set({ theme: next, resolvedTheme: applyTheme(next) })
       },
     }),
     {
       name: 'theme-storage',
-    }
-  )
+      storage: createJSONStorage(() => ({
+        getItem: (key) => {
+          try {
+            return localStorage.getItem(key)
+          } catch {
+            return null
+          }
+        },
+        setItem: (key, value) => {
+          try {
+            localStorage.setItem(key, value)
+          } catch {
+            /* Keep the theme in memory. */
+          }
+        },
+        removeItem: (key) => {
+          try {
+            localStorage.removeItem(key)
+          } catch {
+            /* Storage can be unavailable. */
+          }
+        },
+      })),
+      partialize: (state) => ({ theme: state.theme }),
+    },
+  ),
 )
 
-// 初始化主题
 const initTheme = () => {
-  const { theme } = useThemeStore.getState()
-  const root = window.document.documentElement
-
-  root.classList.remove('light', 'dark')
-
-  if (theme === 'system') {
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
-    root.classList.add(systemTheme)
-  } else {
-    root.classList.add(theme)
-  }
+  useThemeStore.setState({
+    resolvedTheme: applyTheme(useThemeStore.getState().theme),
+  })
 }
 
-// 监听系统主题变化
 if (typeof window !== 'undefined') {
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    const { theme } = useThemeStore.getState()
-    if (theme === 'system') {
-      const root = window.document.documentElement
-      root.classList.remove('light', 'dark')
-      root.classList.add(e.matches ? 'dark' : 'light')
-    }
-  })
+  window
+    .matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', () => {
+      if (useThemeStore.getState().theme === 'system') initTheme()
+    })
 }
 
 export { initTheme }
 export default useThemeStore
-

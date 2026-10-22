@@ -1,90 +1,156 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Card, CardContent } from '../components/ui/card'
-import { Button } from '../components/ui/button'
-import { ArrowRight } from 'lucide-react'
+import React from 'react'
+import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BookOpen,
+  Circle,
+  Feather,
+} from 'lucide-react'
+import { usePosts } from '../hooks/usePosts'
+import { useCategories } from '../hooks/useCategories'
+import { useSetting } from '../hooks/useSettings'
 import api from '../services/api'
+import SEO from '../components/SEO'
+import PostCard from '../components/post/PostCard'
+import PostList from '../components/post/PostList'
+import BlogSidebar from '../components/discovery/BlogSidebar'
+import QueryState from '../components/discovery/QueryState'
 
 export default function Welcome() {
-  const [stats, setStats] = useState(null)
-  const [purpose, setPurpose] = useState('')
-  const [visible, setVisible] = useState(false)
-  const navigate = useNavigate()
-
-  // 入场动画
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 100)
-    return () => clearTimeout(t)
-  }, [])
-
-  // 获取统计信息和建站初衷
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const statsRes = await api.get('/statistics')
-        setStats(statsRes.data)
-        const settingsRes = await api.get('/settings', { params: { group: 'site' } })
-        const settings = settingsRes.data || []
-        const purposeSetting = settings.find(s => s.key === 'site_purpose')
-        setPurpose(purposeSetting?.value || '记录技术成长，分享开发经验')
-      } catch (error) {
-        // 静默处理
-      }
-    }
-    fetchData()
-  }, [])
-
-  // 3 秒后自动跳转（已访问过则跳过 Welcome）
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      sessionStorage.setItem('inkblog_visited', '1')
-      navigate('/posts')
-    }, 3000)
-    return () => clearTimeout(timer)
-  }, [navigate])
-
-  const handleEnter = () => {
-    sessionStorage.setItem('inkblog_visited', '1')
-    navigate('/posts')
-  }
-
+  const { data, isLoading, error, refetch } = usePosts({
+    page: 1,
+    page_size: 7,
+    sort: 'newest',
+    status: 'published',
+  })
+  const { data: categories } = useCategories()
+  const { data: statistics } = useQuery({
+    queryKey: ['statistics'],
+    queryFn: () => api.get('/statistics'),
+    staleTime: 300000,
+  })
+  const heroTitle = useSetting('hero_title', '')
+  const heroDescription = useSetting('hero_description', '')
+  const description = useSetting(
+    'site_description',
+    '关于技术、生活，以及一路上的奇思妙想。这里是我的数字花园，也是与你交换灵感的地方。',
+  )
+  const posts = data?.data?.posts || []
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/20 to-purple-600/20 flex items-center justify-center p-4">
-      <div
-        className="transition-all duration-700 ease-out"
-        style={{
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(20px)',
-        }}
-      >
-        <Card className="w-full max-w-md backdrop-blur-sm bg-background/80 shadow-2xl">
-          <CardContent className="pt-10 pb-8 text-center space-y-6">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              InkBlog
+    <>
+      <SEO />
+      <div className="site-width">
+        <section className="home-hero">
+          <div className="hero-copy">
+            <span className="eyebrow">
+              <span className="status-dot" /> A SPACE FOR THOUGHTS
+            </span>
+            <h1>
+              {heroTitle || (
+                <>
+                  以文字为舟，
+                  <br />
+                  在好奇中<span>远行。</span>
+                </>
+              )}
             </h1>
-
-            <div className="space-y-2 text-muted-foreground">
-              <p className="text-lg">
-                <span className="font-semibold text-foreground">{stats?.user_count || 0}</span> 位用户
-              </p>
-              <p className="text-lg">
-                <span className="font-semibold text-foreground">{stats?.post_count || 0}</span> 篇文章
-              </p>
+            <p>{heroDescription || description}</p>
+            <div className="hero-actions">
+              <Link className="ink-button" to="/posts">
+                开始阅读 <ArrowRight size={17} />
+              </Link>
+              <Link className="quiet-link" to="/archives">
+                沿着时间漫步 <ArrowUpRight size={16} />
+              </Link>
             </div>
-
-            <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-2">建站初衷</p>
-              <p className="text-base italic text-foreground">{purpose}</p>
+            <div className="hero-stats">
+              <span>
+                <strong>{statistics?.data?.post_count ?? '—'}</strong> 篇文字
+              </span>
+              <span>
+                <strong>{categories?.data?.length ?? '—'}</strong> 个主题
+              </span>
+              <span>
+                <strong>
+                  {statistics?.data?.view_count?.toLocaleString() ?? '—'}
+                </strong>{' '}
+                次相遇
+              </span>
             </div>
-
-            <Button onClick={handleEnter} className="gap-2">
-              进入博客 <ArrowRight className="h-4 w-4" />
-            </Button>
-
-            <p className="text-xs text-muted-foreground">3 秒后自动跳转...</p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="hero-art" aria-hidden="true">
+            <span className="art-grid" />
+            <span className="art-orbit" />
+            <div className="art-caption">
+              COLLECTING MOMENTS
+              <br />& CONNECTING DOTS.
+            </div>
+            <div className="note-paper paper-back" />
+            <div className="note-paper paper-front">
+              <Feather size={29} />
+              <span className="paper-kicker">NOTES TO SELF</span>
+              <div className="paper-title">
+                把日常的碎片，
+                <br />
+                写成自己的
+                <br />
+                <em>星图。</em>
+              </div>
+              <span className="paper-line" />
+              <span className="paper-line short" />
+              <div className="paper-footer">
+                <Circle size={9} /> STAY CURIOUS <span>01 / ∞</span>
+              </div>
+            </div>
+            <span className="art-sticker">
+              灵感
+              <br />
+              不打烊 ↗
+            </span>
+            <span className="art-star">✳</span>
+            <span className="art-bottom">A SMALL CORNER OF THE INTERNET</span>
+          </div>
+        </section>
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">THE JOURNAL</span>
+            <h2>
+              最近的记录<span>每一次落笔，都是新的发现。</span>
+            </h2>
+          </div>
+          <Link className="quiet-link" to="/posts">
+            所有文章 <ArrowRight size={16} />
+          </Link>
+        </div>
+        <div className="blog-columns">
+          <div className="min-w-0">
+            {error ? (
+              <QueryState error={error} retry={refetch} />
+            ) : isLoading ? (
+              <PostList isLoading />
+            ) : posts.length ? (
+              <>
+                <PostCard post={posts[0]} featured />
+                <PostList posts={posts.slice(1)} />
+              </>
+            ) : (
+              <QueryState
+                title="故事，即将从这里开始"
+                description="第一篇文字还在酝酿。欢迎回来，见证这个小小花园的生长。"
+              />
+            )}
+            {!!posts.length && (
+              <Link className="all-posts-link" to="/posts">
+                <BookOpen size={18} /> 去文章里，发现更多{' '}
+                <ArrowRight size={18} />
+              </Link>
+            )}
+          </div>
+          <BlogSidebar />
+        </div>
       </div>
-    </div>
+    </>
   )
 }
