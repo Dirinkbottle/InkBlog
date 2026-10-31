@@ -81,6 +81,8 @@ func SetupRouter() *gin.Engine {
 
 		// 统计信息路由（公开）
 		api.GET("/statistics", handlers.GetStatistics)
+		api.GET("/archives", handlers.GetArchives)
+		api.GET("/feed.xml", handlers.GetFeed)
 
 		// 邮箱验证路由（公开）
 		api.GET("/verify-email", auth.VerifyEmail)

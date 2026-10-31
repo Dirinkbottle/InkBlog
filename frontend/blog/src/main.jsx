@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import './styles/markdown-mobile.css'
+import './styles/editorial.css'
 import { initTheme } from './store/themeStore'
 import { initClientSessionTransport } from './services/clientSession'
 
@@ -13,6 +14,5 @@ initClientSessionTransport()
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 )
-

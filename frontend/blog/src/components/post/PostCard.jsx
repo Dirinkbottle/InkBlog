@@ -1,102 +1,96 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card'
-import { Badge } from '../ui/badge'
-import { Calendar, Eye, User, MessageSquare } from 'lucide-react'
-import { formatDate, truncate, generateColor } from '@/lib/utils'
+import { ArrowUpRight, Eye, MessageSquare } from 'lucide-react'
+import { dateLabel } from '../../lib/reading'
+import BookmarkButton from '../reader/BookmarkButton'
 
-const gradients = [
-  'from-sky-400/90 to-cyan-300/90',
-  'from-emerald-400/90 to-teal-300/90',
-  'from-amber-400/90 to-orange-300/90',
-  'from-rose-400/90 to-pink-300/90',
-  'from-indigo-400/90 to-sky-300/90',
-  'from-slate-500/90 to-slate-300/90',
-]
-
-function getGradient(name) {
-  if (!name) return gradients[0]
-  let hash = 0
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return gradients[Math.abs(hash) % gradients.length]
-}
-
-export default function PostCard({ post }) {
-  const hasCover = !!post.cover_image
-
+export default function PostCard({ post, featured = false }) {
+  const [failedCover, setFailedCover] = useState(false)
+  const tone = Number(post.id || 0) % 4
   return (
-    <Card className="card-hover h-full flex flex-col group border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-sky-300 hover:shadow-md">
-      <Link to={`/posts/${post.id}`}>
-        <div className="relative h-48 overflow-hidden rounded-t-lg">
-          {hasCover ? (
-            <img
-              src={post.cover_image}
-              alt={post.title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <div className={`w-full h-full bg-gradient-to-br ${getGradient(post.category?.name)} flex items-center justify-center`}>
-              <span className="text-4xl font-bold text-white/90 select-none">
-                {post.title?.charAt(0) || 'I'}
-              </span>
-            </div>
-          )}
-        </div>
+    <article className={`post-card ${featured ? 'featured-post' : ''}`}>
+      <Link
+        to={`/posts/${post.id}`}
+        className={`post-cover cover-tone-${tone}`}
+        tabIndex={-1}
+        aria-hidden="true"
+      >
+        {post.cover_image && !failedCover ? (
+          <img
+            src={post.cover_image}
+            alt=""
+            loading="lazy"
+            onError={() => setFailedCover(true)}
+          />
+        ) : (
+          <div className="cover-art">
+            <span className="cover-orbit" />
+            <span className="cover-orbit second" />
+            <span className="cover-symbol">
+              {['{ }', 'Aa', '⌘', '∞'][tone]}
+            </span>
+            <span className="cover-caption">
+              {post.category?.name || 'IDEAS & NOTES'}
+            </span>
+            <span className="cover-index">
+              INK / {String(post.id).padStart(3, '0')}
+            </span>
+          </div>
+        )}
+        {featured && (
+          <span className="featured-label">最新一篇 · NEW ENTRY</span>
+        )}
+        <span className="cover-arrow">
+          <ArrowUpRight size={20} />
+        </span>
       </Link>
-
-      <CardHeader className="pb-2">
-        {post.category && (
-          <div className="mb-2">
+      <div className="post-card-body">
+        <div className="post-card-meta">
+          {post.category ? (
             <Link to={`/posts?category=${post.category.id}`}>
-              <Badge variant="secondary" className="bg-sky-100 text-sky-700 hover:bg-sky-200">{post.category.name}</Badge>
+              {post.category.name}
             </Link>
-          </div>
-        )}
-        <CardTitle className="text-slate-900 hover:text-sky-700 transition-colors">
+          ) : (
+            <span>随笔</span>
+          )}
+          <span className="meta-dot">·</span>
+          <time dateTime={post.published_at || post.created_at}>
+            {dateLabel(post)}
+          </time>
+        </div>
+        <h2>
           <Link to={`/posts/${post.id}`}>{post.title}</Link>
-        </CardTitle>
-        <CardDescription className="mt-2 line-clamp-2 text-slate-500">
-          {truncate(post.summary, 120)}
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="flex-1 pb-2">
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {post.tags.map((tag) => (
-              <Link key={tag.id} to={`/posts?tag=${tag.id}`}>
-                <Badge className={generateColor(tag.name)} variant="outline">
-                  {tag.name}
-                </Badge>
-              </Link>
-            ))}
-          </div>
-        )}
-      </CardContent>
-
-      <CardFooter className="text-sm text-slate-500 flex items-center justify-between border-t border-slate-100 pt-4">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center">
-            <User className="h-3.5 w-3.5 mr-1" />
-            <span>{post.author?.username || '佚名'}</span>
-          </div>
-          <div className="flex items-center">
-            <Eye className="h-3.5 w-3.5 mr-1" />
-            <span>{post.views || 0}</span>
-          </div>
-          <div className="flex items-center">
-            <MessageSquare className="h-3.5 w-3.5 mr-1" />
-            <span>{post.comment_count || 0}</span>
-          </div>
+        </h2>
+        <p className="post-excerpt">
+          {post.summary || '打开这篇文章，发现文字背后的思考。'}
+        </p>
+        <div className="post-tags">
+          {post.tags?.slice(0, 3).map((tag) => (
+            <Link key={tag.id} to={`/posts?tag=${tag.id}`}>
+              # {tag.name}
+            </Link>
+          ))}
         </div>
-        <div className="flex items-center">
-          <Calendar className="h-3.5 w-3.5 mr-1" />
-          <span>{formatDate(post.published_at || post.created_at)}</span>
+        <div className="post-card-bottom">
+          <span className="post-author">
+            <span className="author-avatar">
+              {post.author?.username?.charAt(0).toUpperCase() || 'I'}
+            </span>
+            {post.author?.username || '佚名'}
+          </span>
+          <span className="post-metrics">
+            <span title="阅读次数">
+              <Eye size={13} />
+              {post.views || 0}
+            </span>
+            <span title="评论数">
+              <MessageSquare size={13} />
+              {post.comment_count || 0}
+            </span>
+          </span>
+          <BookmarkButton post={post} compact />
         </div>
-      </CardFooter>
-    </Card>
+      </div>
+    </article>
   )
 }

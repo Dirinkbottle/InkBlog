@@ -5,6 +5,11 @@ export const settingsTabs = [
 ]
 
 export const defaultSettings = {
+  site_name: 'InkBlog',
+  hero_title: '',
+  hero_description: '',
+  site_purpose: '',
+  site_url: '',
   site_description: '',
   footer_text: '',
   icp_number: '',

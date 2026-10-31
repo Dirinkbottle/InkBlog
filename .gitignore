@@ -6,3 +6,5 @@ deploy/
 .env.compose
 .gitnexus
 github-release/*
+frontend/blog/test-results/
+frontend/blog/playwright-report/

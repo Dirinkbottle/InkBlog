@@ -17,9 +17,7 @@ func GetPostList(c *gin.Context) {
 	}
 
 	// 对于公开接口，只返回已发布的文章
-	if query.Status == "" {
-		query.Status = "published"
-	}
+	query.Status = "published"
 
 	result, err := service.GetPostList(query)
 	if err != nil {
@@ -72,4 +70,3 @@ func GetPostBySlug(c *gin.Context) {
 
 	utils.Success(c, post)
 }
-

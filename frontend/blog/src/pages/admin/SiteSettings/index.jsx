@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Save, Loader2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { adminAPI } from '@/services/api'
 import BasicSettingsTab from './BasicSettingsTab'
@@ -8,6 +9,7 @@ import EmailSettingsTab from './EmailSettingsTab'
 import { settingsTabs, defaultSettings } from './utils'
 
 export default function SiteSettings() {
+  const queryClient = useQueryClient()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('site')
@@ -18,7 +20,7 @@ export default function SiteSettings() {
       setLoading(true)
       const res = await adminAPI.getSettings()
       if (res.data) {
-        setSettings(prev => ({ ...prev, ...res.data }))
+        setSettings((prev) => ({ ...prev, ...res.data }))
       }
     } catch (error) {
       console.error('获取设置失败:', error)
@@ -36,6 +38,7 @@ export default function SiteSettings() {
     try {
       setSaving(true)
       await adminAPI.updateSettings(settings)
+      await queryClient.invalidateQueries({ queryKey: ['settings'] })
       alert('保存成功')
     } catch (error) {
       console.error('保存失败:', error)
@@ -67,7 +70,7 @@ export default function SiteSettings() {
         <div>
           <div className="border-b mb-6">
             <div className="flex space-x-4">
-              {settingsTabs.map(tab => (
+              {settingsTabs.map((tab) => (
                 <button
                   key={tab.id}
                   className={`px-4 py-2 font-medium transition-colors ${
@@ -83,9 +86,15 @@ export default function SiteSettings() {
             </div>
           </div>
 
-          {activeTab === 'site' && <BasicSettingsTab settings={settings} setSettings={setSettings} />}
-          {activeTab === 'comment' && <CommentSettingsTab settings={settings} setSettings={setSettings} />}
-          {activeTab === 'email' && <EmailSettingsTab settings={settings} setSettings={setSettings} />}
+          {activeTab === 'site' && (
+            <BasicSettingsTab settings={settings} setSettings={setSettings} />
+          )}
+          {activeTab === 'comment' && (
+            <CommentSettingsTab settings={settings} setSettings={setSettings} />
+          )}
+          {activeTab === 'email' && (
+            <EmailSettingsTab settings={settings} setSettings={setSettings} />
+          )}
         </div>
       )}
     </div>
